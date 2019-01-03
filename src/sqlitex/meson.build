@@ -24,14 +24,15 @@ pkgconfig.generate(
 
 install_headers(
 	[
-		'errc.hh',
-		'types.hh',
-		'database.hh',
-		'ext.hh',
-		'rstream_base.hh',
-		'rstream.hh',
 		'call.hh',
+		'database.hh',
+		'errc.hh',
 		'error_category.hh',
+		'ext.hh',
+		'open.hh',
+		'rstream.hh',
+		'rstream_base.hh',
+		'types.hh',
 	],
 	subdir: sqlite_name
 )

@@ -38,6 +38,8 @@ namespace sqlite {
 
 	public:
 
+		rstream() = default;
+
 		inline explicit
 		rstream(statement_type* stmt):
 		_stmt(stmt)
@@ -54,6 +56,7 @@ namespace sqlite {
 
 		inline rstream&
 		operator=(rstream&& rhs) {
+			this->rstream_base::clear(goodbit);
 			this->swap(rhs);
 			return *this;
 		}
@@ -66,6 +69,12 @@ namespace sqlite {
 		inline
 		~rstream() {
 			this->close();
+		}
+
+		inline void
+		open(statement_type* stmt) {
+			this->close();
+			this->_stmt = stmt;
 		}
 
 		inline bool
@@ -126,8 +135,18 @@ namespace sqlite {
 		}
 
 		inline void
+		bind(int index, unsigned int value) {
+			this->bind(index, static_cast<int>(value));
+		}
+
+		inline void
 		bind(int index, int64_t value) {
 			call(::sqlite3_bind_int64(this->_stmt, index, value));
+		}
+
+		inline void
+		bind(int index, uint64_t value) {
+			this->bind(index, static_cast<int64_t>(value));
 		}
 
 		inline void
@@ -135,8 +154,9 @@ namespace sqlite {
 			call(::sqlite3_bind_text(this->_stmt, index, value, -1, SQLITE_STATIC));
 		}
 
+		template <class Ch, class Tr, class Alloc>
 		inline void
-		bind(int index, const std::string& value) {
+		bind(int index, const std::basic_string<Ch,Tr,Alloc>& value) {
 			call(::sqlite3_bind_text(
 				this->_stmt,
 				index,
@@ -165,6 +185,11 @@ namespace sqlite {
 				index,
 				static_cast<int64_t>(Clock::to_time_t(value))
 			));
+		}
+
+		inline void
+		bind(int index, std::nullptr_t) {
+			call(::sqlite3_bind_null(this->_stmt, index));
 		}
 
 		inline void
@@ -284,6 +309,14 @@ namespace sqlite {
 		}
 
 		inline cstream&
+		operator>>(unsigned int& rhs) {
+			int tmp;
+			this->operator>>(tmp);
+			rhs = tmp;
+			return *this;
+		}
+
+		inline cstream&
 		operator>>(int64_t& rhs) {
 			if (this->good()) {
 				rhs = ::sqlite3_column_int64(this->_rstr.statement(), this->_col);
@@ -293,7 +326,16 @@ namespace sqlite {
 		}
 
 		inline cstream&
-		operator>>(std::string& rhs) {
+		operator>>(uint64_t& rhs) {
+			int64_t tmp;
+			this->operator>>(tmp);
+			rhs = tmp;
+			return *this;
+		}
+
+		template <class Ch, class Tr, class Alloc>
+		inline cstream&
+		operator>>(std::basic_string<Ch,Tr,Alloc>& rhs) {
 			if (this->good()) {
 				const unsigned char* result =
 					::sqlite3_column_text(this->_rstr.statement(), this->_col);

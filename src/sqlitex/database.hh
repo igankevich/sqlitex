@@ -2,6 +2,7 @@
 #define SQLITE_DATABASE_HH
 
 #include <sqlitex/call.hh>
+#include <sqlitex/open.hh>
 #include <sqlitex/rstream.hh>
 
 namespace sqlite {
@@ -18,8 +19,11 @@ namespace sqlite {
 		database() = default;
 
 		inline explicit
-		database(const char* filename) {
-			this->open(filename);
+		database(
+			const char* filename,
+			open_flag flags = open_flag::read_write | open_flag::create
+		) {
+			this->open(filename, flags);
 		}
 
 		inline
@@ -43,8 +47,12 @@ namespace sqlite {
 		database& operator=(const database&) = delete;
 
 		inline void
-		open(const char* filename) {
-			call(::sqlite3_open(filename, &this->_db));
+		open(
+			const char* filename,
+			open_flag flags = open_flag::read_write | open_flag::create
+		) {
+			this->close();
+			call(::sqlite3_open_v2(filename, &this->_db, int(flags), nullptr));
 		}
 
 		/**
@@ -62,6 +70,11 @@ namespace sqlite {
 				call(::sqlite3_close(this->_db));
 				this->_db = nullptr;
 			}
+		}
+
+		inline void
+		flush() {
+			call(::sqlite3_db_cacheflush(this->_db));
 		}
 
 		inline const db_type*

@@ -36,8 +36,8 @@ namespace sqlite {
 		}
 
 		inline void
-		clear() noexcept {
-			this->_state = goodbit;
+		clear(state rhs) noexcept {
+			this->_state = rhs;
 		}
 
 		inline bool
