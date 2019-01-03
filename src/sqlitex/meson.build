@@ -21,3 +21,17 @@ pkgconfig.generate(
 	filebase: sqlite_name,
 	description: project_description,
 )
+
+install_headers(
+	[
+		'errc.hh',
+		'types.hh',
+		'database.hh',
+		'ext.hh',
+		'rstream_base.hh',
+		'rstream.hh',
+		'call.hh',
+		'error_category.hh',
+	],
+	subdir: sqlite_name
+)
