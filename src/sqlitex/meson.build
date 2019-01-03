@@ -3,7 +3,7 @@ sqlite_src = files([
 	'rstream.cc'
 ])
 sqlite_deps = [sqlite3]
-sqlite_name = 'sqlite'
+sqlite_name = 'sqlitex'
 
 sqlite_lib = library(
 	sqlite_name,

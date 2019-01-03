@@ -1,0 +1,56 @@
+Name:           @name@
+Version:        @version@
+Release:        @release@%{?dist}
+Summary:        @description@
+
+License:        @license@
+URL:            https://igankevich.github.io/@name@/ 
+Source0:        @name@-%{version}.tar.xz
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+
+BuildRequires:  gcc-c++
+BuildRequires:  meson
+
+%description
+@description@
+
+%package        devel
+Summary:        Development files for %{name}
+Requires:       %{name}%{?_isa} = %{version}-%{release}
+
+%description    devel
+Libraries, header files and pkg-config files for %{name}.
+
+%global debug_package %{nil}
+
+%prep
+%autosetup
+
+%build
+%meson
+%meson_build
+
+%install
+%meson_install
+
+%check
+%meson_test
+
+%post -p /sbin/ldconfig
+
+%postun -p /sbin/ldconfig
+
+%files
+%defattr(0755,root,root,0755)
+%{_libdir}/libsqlitex.so.*
+
+%files devel
+%defattr(0644,root,root,0755)
+%{_includedir}/sqlitex
+%{_libdir}/pkgconfig/sqlitex.pc
+%{_libdir}/libsqlitex.so
+
+%changelog
+* Thu Jan 03 2018 Ivan Gankevich <igankevich@ya.ru> 0.1-1
+Packaged everything.
+
