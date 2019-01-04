@@ -2,12 +2,14 @@
 #define SQLITE_DATABASE_HH
 
 #include <sqlitex/call.hh>
+#include <sqlitex/encoding.hh>
 #include <sqlitex/open.hh>
 #include <sqlitex/rstream.hh>
 
 namespace sqlite {
 
 	typedef ::sqlite3 db_type;
+	typedef void (*scalar_function_t)(::sqlite3_context*,int,::sqlite3_value**);
 
 	class database {
 
@@ -108,7 +110,9 @@ namespace sqlite {
 		template <class ... Args>
 		inline void
 		execute(const std::string& sql, const Args& ... args) {
-			this->prepare(sql, args...).step();
+			rstream&& rstr = this->prepare(sql, args...);
+			rstr.step();
+			rstr.close();
 		}
 
 		inline void
@@ -157,6 +161,52 @@ namespace sqlite {
 			rstr >> cstr;
 			cstr >> version;
 			return version;
+		}
+
+		inline void
+		scalar_function(
+			scalar_function_t func,
+			const char* name,
+			int narguments,
+			encoding enc = encoding::utf8,
+			bool deterministic = true,
+			void* ptr = nullptr
+		) {
+			int flags = static_cast<int>(enc);
+			if (deterministic) {
+				flags |= SQLITE_DETERMINISTIC;
+			}
+			call(::sqlite3_create_function_v2(
+				this->_db,
+				name,
+				narguments,
+				flags,
+				ptr,
+				func,
+				nullptr,
+				nullptr,
+				nullptr
+			));
+		}
+
+		inline void
+		remove_function(
+			const char* name,
+			int narguments,
+			encoding enc = encoding::utf8
+		) {
+			int flags = static_cast<int>(enc);
+			call(::sqlite3_create_function_v2(
+				this->_db,
+				name,
+				narguments,
+				flags,
+				nullptr,
+				nullptr,
+				nullptr,
+				nullptr,
+				nullptr
+			));
 		}
 
 		inline void

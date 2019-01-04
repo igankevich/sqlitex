@@ -26,6 +26,7 @@ install_headers(
 	[
 		'call.hh',
 		'database.hh',
+		'encoding.hh',
 		'errc.hh',
 		'error_category.hh',
 		'ext.hh',

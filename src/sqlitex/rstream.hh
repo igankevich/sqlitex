@@ -68,7 +68,8 @@ namespace sqlite {
 
 		inline
 		~rstream() {
-			this->close();
+			::sqlite3_finalize(this->_stmt);
+			this->_stmt = nullptr;
 		}
 
 		inline void
