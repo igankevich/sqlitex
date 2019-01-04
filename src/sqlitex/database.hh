@@ -1,6 +1,8 @@
 #ifndef SQLITE_DATABASE_HH
 #define SQLITE_DATABASE_HH
 
+#include <chrono>
+
 #include <sqlitex/call.hh>
 #include <sqlitex/encoding.hh>
 #include <sqlitex/open.hh>
@@ -163,6 +165,16 @@ namespace sqlite {
 			return version;
 		}
 
+		template <class Rep, class Period>
+		inline void
+		busy_timeout(const std::chrono::duration<Rep,Period>& dur) {
+			using namespace std::chrono;
+			std::string sql;
+			sql += "PRAGMA busy_timeout=";
+			sql += std::to_string(duration_cast<milliseconds>(dur).count());
+			this->execute(sql);
+		}
+
 		inline void
 		scalar_function(
 			scalar_function_t func,
@@ -207,6 +219,16 @@ namespace sqlite {
 				nullptr,
 				nullptr
 			));
+		}
+
+		inline sqlite_errc
+		error_code() const {
+			return sqlite_errc(::sqlite3_errcode(this->_db));
+		}
+
+		inline sqlite_errc
+		extended_error_code() const {
+			return sqlite_errc(::sqlite3_extended_errcode(this->_db));
 		}
 
 		inline void

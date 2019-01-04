@@ -24,6 +24,7 @@ pkgconfig.generate(
 
 install_headers(
 	[
+		'backup.hh',
 		'call.hh',
 		'database.hh',
 		'encoding.hh',
