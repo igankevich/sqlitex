@@ -34,6 +34,7 @@ install_headers(
 		'open.hh',
 		'rstream.hh',
 		'rstream_base.hh',
+		'transaction.hh',
 		'types.hh',
 	],
 	subdir: sqlite_name

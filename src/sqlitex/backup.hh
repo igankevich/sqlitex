@@ -11,6 +11,7 @@ namespace sqlite {
 
 	private:
 		backup_type* _backup = nullptr;
+		bool _done = false;
 
 	public:
 
@@ -49,10 +50,19 @@ namespace sqlite {
 		step(int npages=-1) {
 			sqlite_errc ret =
 				sqlite_errc(::sqlite3_backup_step(this->_backup, npages));
-			if (ret == sqlite_errc::ok || ret == sqlite_errc::done) {
+			if (ret == sqlite_errc::done) {
+				this->_done = true;
+				return;
+			}
+			if (ret == sqlite_errc::ok) {
 				return;
 			}
 			throw_error(ret);
+		}
+
+		inline bool
+		done() const {
+			return this->_done;
 		}
 
 		inline int

@@ -139,6 +139,11 @@ namespace sqlite {
 
 		inline void
 		attach(std::string path, std::string name) {
+			this->attach(path.data(), name.data());
+		}
+
+		inline void
+		attach(const char* path, const char* name) {
 			this->execute("ATTACH DATABASE ? AS ?", path, name);
 		}
 
@@ -148,9 +153,11 @@ namespace sqlite {
 		}
 
 		inline void
-		user_version(int64_t version) {
+		user_version(int64_t version, const char* name="main") {
 			std::string sql;
-			sql += "PRAGMA user_version=";
+			sql += "PRAGMA ";
+			sql += name;
+			sql += ".user_version=";
 			sql += std::to_string(version);
 			this->execute(sql);
 		}
@@ -165,14 +172,33 @@ namespace sqlite {
 			return version;
 		}
 
+		inline int64_t
+		user_version(const char* name) {
+			std::string sql;
+			sql += "PRAGMA ";
+			sql += name;
+			sql += ".user_version";
+			int64_t version = 0;
+			rstream rstr{this->prepare(sql.data())};
+			cstream cstr(rstr);
+			rstr >> cstr;
+			cstr >> version;
+			return version;
+		}
+
 		template <class Rep, class Period>
 		inline void
 		busy_timeout(const std::chrono::duration<Rep,Period>& dur) {
 			using namespace std::chrono;
-			std::string sql;
-			sql += "PRAGMA busy_timeout=";
-			sql += std::to_string(duration_cast<milliseconds>(dur).count());
-			this->execute(sql);
+			call(::sqlite3_busy_timeout(
+				this->_db,
+				duration_cast<milliseconds>(dur).count()
+			));
+		}
+
+		inline void
+		enable_foreign_keys() {
+			this->execute("PRAGMA foreign_keys=1");
 		}
 
 		inline void
