@@ -54,6 +54,6 @@ Libraries, header files and pkg-config files for %{name}.
 %{_libdir}/libsqlitex.so
 
 %changelog
-* Thu Jan 03 2018 Ivan Gankevich <igankevich@ya.ru> 0.1-1
+* Thu Jan 03 2019 Ivan Gankevich <igankevich@ya.ru> 0.1-1
 Packaged everything.
 

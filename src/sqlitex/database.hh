@@ -201,6 +201,16 @@ namespace sqlite {
 			this->execute("PRAGMA foreign_keys=1");
 		}
 
+		inline bool
+		is_in_auto_commit_mode() {
+			return ::sqlite3_get_autocommit(this->_db) != 0;
+		}
+
+		inline bool
+		transaction_is_active() {
+			return !this->is_in_auto_commit_mode();
+		}
+
 		inline void
 		scalar_function(
 			scalar_function_t func,
