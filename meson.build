@@ -1,7 +1,7 @@
 project(
 	'sqlitex',
 	'cpp',
-	version: '0.2.0',
+	version: '0.3.0',
 	meson_version: '>=0.46',
 	default_options: ['cpp_std=c++11']
 )

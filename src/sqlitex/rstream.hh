@@ -281,6 +281,13 @@ namespace sqlite {
 			return !this->eof();
 		}
 
+		inline data_type
+		column_type() const noexcept {
+			return static_cast<data_type>(
+				::sqlite3_column_type(this->_rstr.statement(), this->_col)
+			);
+		}
+
 		inline cstream&
 		operator>>(float& rhs) {
 			if (this->good()) {

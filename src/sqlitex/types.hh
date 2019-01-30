@@ -46,6 +46,14 @@ namespace sqlite {
 
 	};
 
+	enum class data_type {
+		integer = SQLITE_INTEGER,
+		floating_point = SQLITE_FLOAT,
+		blob = SQLITE_BLOB,
+		null = SQLITE_NULL,
+		text = SQLITE_TEXT,
+	};
+
 }
 
 #endif // vim:filetype=cpp
