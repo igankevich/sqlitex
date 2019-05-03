@@ -1,0 +1,282 @@
+* API
+- [X] sqlite3_version
+- [X] sqlite3_libversion
+- [X] sqlite3_sourceid
+- [X] sqlite3_libversion_number
+- [ ] sqlite3_compileoption_used
+- [ ] sqlite3_compileoption_get
+- [ ] sqlite3_threadsafe
+- [X] sqlite3_close
+- [ ] sqlite3_close_v2
+- [X] sqlite3_exec
+- [ ] sqlite3_initialize
+- [ ] sqlite3_shutdown
+- [ ] sqlite3_os_init
+- [ ] sqlite3_os_end
+- [ ] sqlite3_config
+- [X] sqlite3_db_config
+- [X] sqlite3_extended_result_codes
+- [X] sqlite3_set_last_insert_rowid
+- [X} sqlite3_last_insert_rowid
+- [X] sqlite3_changes
+- [X] sqlite3_total_changes
+- [X] sqlite3_interrupt
+- [X] sqlite3_complete
+- [ ] sqlite3_complete16
+- [X] sqlite3_busy_handler
+- [X] sqlite3_busy_timeout
+- [ ] sqlite3_get_table
+- [ ] sqlite3_free_table
+- [ ] sqlite3_mprintf
+- [ ] sqlite3_vmprintf
+- [ ] sqlite3_snprintf
+- [ ] sqlite3_vsnprintf
+- [ ] sqlite3_malloc
+- [X] sqlite3_malloc64
+- [ ] sqlite3_realloc
+- [X] sqlite3_realloc64
+- [X] sqlite3_free
+- [X] sqlite3_msize
+- [X] sqlite3_memory_used
+- [X] sqlite3_memory_highwater
+- [X] sqlite3_randomness
+- [ ] sqlite3_set_authorizer
+- [ ] sqlite3_trace_v2
+- [ ] sqlite3_progress_handler
+- [ ] sqlite3_open
+- [ ] sqlite3_open16
+- [X] sqlite3_open_v2
+- [ ] sqlite3_uri_parameter
+- [ ] sqlite3_uri_boolean
+- [X] sqlite3_errcode
+- [X] sqlite3_extended_errcode
+- [X] sqlite3_errmsg
+- [ ] sqlite3_errmsg16
+- [X] sqlite3_errstr
+- [X] sqlite3_limit
+- [ ] sqlite3_prepare
+- [X] sqlite3_prepare_v2
+- [ ] sqlite3_prepare_v3
+- [ ] sqlite3_prepare16
+- [ ] sqlite3_prepare16_v2
+- [ ] sqlite3_prepare16_v3
+- [X] sqlite3_sql
+- [X] sqlite3_expanded_sql
+- [ ] sqlite3_stmt_readonly
+- [ ] sqlite3_stmt_busy
+- [X] sqlite3_bind_blob
+- [ ] sqlite3_bind_blob64
+- [X] sqlite3_bind_double
+- [X] sqlite3_bind_int
+- [X] sqlite3_bind_int64
+- [X] sqlite3_bind_null
+- [X] sqlite3_bind_text
+- [ ] sqlite3_bind_text16
+- [ ] sqlite3_bind_text64
+- [ ] sqlite3_bind_value
+- [ ] sqlite3_bind_pointer
+- [ ] sqlite3_bind_zeroblob
+- [ ] sqlite3_bind_zeroblob64
+- [X] sqlite3_bind_parameter_count
+- [X] sqlite3_bind_parameter_name
+- [X] sqlite3_bind_parameter_index
+- [X] sqlite3_clear_bindings
+- [ ] sqlite3_column_count
+- [ ] sqlite3_column_name
+- [ ] sqlite3_column_name16
+- [ ] sqlite3_column_database_name
+- [ ] sqlite3_column_database_name16
+- [ ] sqlite3_column_table_name
+- [ ] sqlite3_column_table_name16
+- [ ] sqlite3_column_origin_name
+- [ ] sqlite3_column_origin_name16
+- [ ] sqlite3_column_decltype
+- [ ] sqlite3_column_decltype16
+- [X] sqlite3_step
+- [X] sqlite3_data_count
+- [X] sqlite3_column_blob
+- [X] sqlite3_column_double
+- [X] sqlite3_column_int
+- [X] sqlite3_column_int64
+- [X] sqlite3_column_text
+- [X] sqlite3_column_text16
+- [X] sqlite3_column_value
+- [X] sqlite3_column_bytes
+- [ ] sqlite3_column_bytes16
+- [X] sqlite3_column_type
+- [X] sqlite3_finalize
+- [X] sqlite3_reset
+- [ ] sqlite3_create_function
+- [ ] sqlite3_create_function16
+- [X] sqlite3_create_function_v2
+- [X] sqlite3_value_blob
+- [X] sqlite3_value_double
+- [X] sqlite3_value_int
+- [X] sqlite3_value_int64
+- [X] sqlite3_value_pointer
+- [X] sqlite3_value_text
+- [X] sqlite3_value_text16
+- [ ] sqlite3_value_text16le
+- [ ] sqlite3_value_text16be
+- [X] sqlite3_value_bytes
+- [X] sqlite3_value_bytes16
+- [X] sqlite3_value_type
+- [X] sqlite3_value_numeric_type
+- [X] sqlite3_value_nochange
+- [X] sqlite3_value_subtype
+- [X] sqlite3_value_dup
+- [X] sqlite3_value_free
+- [ ] sqlite3_aggregate_context
+- [ ] sqlite3_user_data
+- [ ] sqlite3_context_db_handle
+- [ ] sqlite3_get_auxdata
+- [ ] sqlite3_set_auxdata
+- [ ] sqlite3_result_blob
+- [ ] sqlite3_result_blob64
+- [ ] sqlite3_result_double
+- [ ] sqlite3_result_error
+- [ ] sqlite3_result_error16
+- [ ] sqlite3_result_error_toobig
+- [ ] sqlite3_result_error_nomem
+- [ ] sqlite3_result_error_code
+- [ ] sqlite3_result_int
+- [ ] sqlite3_result_int64
+- [ ] sqlite3_result_null
+- [ ] sqlite3_result_text
+- [ ] sqlite3_result_text64
+- [ ] sqlite3_result_text16
+- [ ] sqlite3_result_text16le
+- [ ] sqlite3_result_text16be
+- [ ] sqlite3_result_value
+- [ ] sqlite3_result_pointer
+- [ ] sqlite3_result_zeroblob
+- [ ] sqlite3_result_zeroblob64
+- [ ] sqlite3_result_subtype
+- [ ] sqlite3_create_collation
+- [ ] sqlite3_create_collation_v2
+- [ ] sqlite3_create_collation16
+- [ ] sqlite3_collation_needed
+- [ ] sqlite3_collation_needed16
+- [ ] sqlite3_key
+- [ ] sqlite3_key_v2
+- [ ] sqlite3_rekey
+- [ ] sqlite3_rekey_v2
+- [ ] sqlite3_activate_see
+- [ ] sqlite3_activate_cerod
+- [X] sqlite3_sleep
+- [X] sqlite3_temp_directory
+- [X] sqlite3_data_directory
+- [X] sqlite3_get_autocommit
+- [X] sqlite3_db_handle
+- [X] sqlite3_db_filename
+- [X] sqlite3_db_readonly
+- [ ] sqlite3_next_stmt
+- [X] sqlite3_commit_hook
+- [X] sqlite3_rollback_hook
+- [X] sqlite3_update_hook
+- [ ] sqlite3_enable_shared_cache
+- [X] sqlite3_release_memory
+- [X] sqlite3_db_release_memory
+- [X] sqlite3_soft_heap_limit64
+- [ ] sqlite3_table_column_metadata
+- [ ] sqlite3_load_extension
+- [X] sqlite3_enable_load_extension
+- [X] sqlite3_auto_extension
+- [X] sqlite3_cancel_auto_extension
+- [X] sqlite3_reset_auto_extension
+- [ ] sqlite3_create_module
+- [ ] sqlite3_create_module_v2
+- [ ] sqlite3_declare_vtab
+- [ ] sqlite3_overload_function
+- [ ] sqlite3_blob_open
+- [ ] sqlite3_blob_reopen
+- [ ] sqlite3_blob_close
+- [ ] sqlite3_blob_bytes
+- [ ] sqlite3_blob_read
+- [ ] sqlite3_blob_write
+- [ ] sqlite3_vfs_find
+- [ ] sqlite3_vfs_register
+- [ ] sqlite3_vfs_unregister
+- [X] sqlite3_mutex_alloc
+- [X] sqlite3_mutex_free
+- [X] sqlite3_mutex_enter
+- [X] sqlite3_mutex_try
+- [X] sqlite3_mutex_leave
+- [X] sqlite3_mutex_held
+- [X] sqlite3_mutex_notheld
+- [X] sqlite3_db_mutex
+- [ ] sqlite3_file_control
+- [ ] sqlite3_test_control
+- [ ] sqlite3_status
+- [ ] sqlite3_status64
+- [ ] sqlite3_db_status
+- [ ] sqlite3_stmt_status
+- [X] sqlite3_backup_init
+- [X] sqlite3_backup_step
+- [X] sqlite3_backup_finish
+- [X] sqlite3_backup_remaining
+- [X] sqlite3_backup_pagecount
+- [ ] sqlite3_unlock_notify
+- [ ] sqlite3_stricmp
+- [ ] sqlite3_strnicmp
+- [ ] sqlite3_strglob
+- [ ] sqlite3_strlike
+- [ ] sqlite3_log
+- [ ] sqlite3_wal_hook
+- [ ] sqlite3_wal_autocheckpoint
+- [ ] sqlite3_wal_checkpoint
+- [ ] sqlite3_wal_checkpoint_v2
+- [ ] sqlite3_vtab_config
+- [ ] sqlite3_vtab_on_conflict
+- [ ] sqlite3_vtab_nochange
+- [ ] sqlite3_vtab_collation
+- [ ] sqlite3_stmt_scanstatus
+- [ ] sqlite3_stmt_scanstatus_reset
+- [X] sqlite3_db_cacheflush
+- [ ] sqlite3_preupdate_hook
+- [ ] sqlite3_preupdate_old
+- [ ] sqlite3_preupdate_count
+- [ ] sqlite3_preupdate_depth
+- [ ] sqlite3_preupdate_new
+- [X] sqlite3_system_errno
+- [ ] sqlite3_snapshot_get
+- [ ] sqlite3_snapshot_open
+- [ ] sqlite3_snapshot_free
+- [ ] sqlite3_snapshot_cmp
+- [ ] sqlite3_snapshot_recover
+- [ ] sqlite3_rtree_geometry_callback
+- [ ] sqlite3_rtree_query_callback
+- [ ] sqlite3session_create
+- [ ] sqlite3session_delete
+- [ ] sqlite3session_enable
+- [ ] sqlite3session_indirect
+- [ ] sqlite3session_attach
+- [ ] sqlite3session_table_filter
+- [ ] sqlite3session_changeset
+- [ ] sqlite3session_diff
+- [ ] sqlite3session_patchset
+- [ ] sqlite3session_isempty
+- [ ] sqlite3changeset_start
+- [ ] sqlite3changeset_next
+- [ ] sqlite3changeset_op
+- [ ] sqlite3changeset_pk
+- [ ] sqlite3changeset_old
+- [ ] sqlite3changeset_new
+- [ ] sqlite3changeset_conflict
+- [ ] sqlite3changeset_fk_conflicts
+- [ ] sqlite3changeset_finalize
+- [ ] sqlite3changeset_invert
+- [ ] sqlite3changeset_concat
+- [ ] sqlite3changegroup_new
+- [ ] sqlite3changegroup_add
+- [ ] sqlite3changegroup_output
+- [ ] sqlite3changegroup_delete
+- [ ] sqlite3changeset_apply
+- [ ] sqlite3changeset_apply_strm
+- [ ] sqlite3changeset_concat_strm
+- [ ] sqlite3changeset_invert_strm
+- [ ] sqlite3changeset_start_strm
+- [ ] sqlite3session_changeset_strm
+- [ ] sqlite3session_patchset_strm
+- [ ] sqlite3changegroup_add_strm
+- [ ] sqlite3changegroup_output_strm

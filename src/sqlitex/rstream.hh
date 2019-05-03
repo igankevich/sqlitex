@@ -7,15 +7,13 @@
 
 #include <unistdx/it/basic_istream_iterator>
 
+#include <sqlitex/any.hh>
 #include <sqlitex/call.hh>
+#include <sqlitex/forward.hh>
 #include <sqlitex/rstream_base.hh>
 #include <sqlitex/types.hh>
 
 namespace sqlite {
-
-	typedef ::sqlite3_stmt statement_type;
-
-	class cstream;
 
 	/**
 	\brief Stream of rows.
@@ -34,14 +32,14 @@ namespace sqlite {
 	class rstream: public rstream_base {
 
 	private:
-		statement_type* _stmt = nullptr;
+		types::statement* _stmt = nullptr;
 
 	public:
 
 		rstream() = default;
 
 		inline explicit
-		rstream(statement_type* stmt):
+		rstream(types::statement* stmt):
 		_stmt(stmt)
 		{}
 
@@ -73,7 +71,7 @@ namespace sqlite {
 		}
 
 		inline void
-		open(statement_type* stmt) {
+		open(types::statement* stmt) {
 			this->close();
 			this->_stmt = stmt;
 		}
@@ -214,15 +212,17 @@ namespace sqlite {
 		inline rstream&
 		operator>>(cstream& rhs);
 
-		inline statement_type*
+		inline types::statement*
 		statement() noexcept {
 			return this->_stmt;
 		}
 
-		inline const statement_type*
+		inline const types::statement*
 		statement() const noexcept {
 			return this->_stmt;
 		}
+
+		static_database database();
 
 	};
 
@@ -341,17 +341,26 @@ namespace sqlite {
 			return *this;
 		}
 
-		template <class Ch, class Tr, class Alloc>
 		inline cstream&
-		operator>>(std::basic_string<Ch,Tr,Alloc>& rhs) {
+		operator>>(std::string& rhs) {
 			if (this->good()) {
-				const unsigned char* result =
-					::sqlite3_column_text(this->_rstr.statement(), this->_col);
+				auto result = ::sqlite3_column_text(this->_rstr.statement(), this->_col);
 				if (!result) {
 					rhs.clear();
 				} else {
-					rhs = reinterpret_cast<const char*>(result);
+					rhs = reinterpret_cast<const std::string::value_type*>(result);
 				}
+				++this->_col;
+			}
+			return *this;
+		}
+
+		inline cstream&
+		operator>>(std::u16string& rhs) {
+			if (this->good()) {
+				auto result = ::sqlite3_column_text16(this->_rstr.statement(), this->_col);
+				if (!result) { rhs.clear(); }
+				else { rhs = reinterpret_cast<const std::u16string::value_type*>(result); }
 				++this->_col;
 			}
 			return *this;
@@ -374,15 +383,20 @@ namespace sqlite {
 			return *this;
 		}
 
+		inline cstream&
+		operator>>(any_base& rhs) {
+			if (this->good()) {
+				rhs.clear(::sqlite3_column_value(this->_rstr.statement(), this->_col));
+				++this->_col;
+			}
+			return *this;
+		}
+
 		template <class Clock, class Duration>
 		inline cstream&
 		operator>>(std::chrono::time_point<Clock,Duration>& rhs) {
 			if (this->good()) {
-				int64_t value =
-					::sqlite3_column_int64(
-						this->_rstr.statement(),
-						this->_col
-					);
+				auto value = ::sqlite3_column_int64(this->_rstr.statement(), this->_col);
 				rhs = Clock::from_time_t(static_cast<std::time_t>(value));
 				++this->_col;
 			}

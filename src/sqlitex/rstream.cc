@@ -1,9 +1,11 @@
 #ifndef VTESTBED_SQLITE_RSTREAM_CC
 #define VTESTBED_SQLITE_RSTREAM_CC
 
-#include "rstream.hh"
 
 #include <ostream>
+
+#include <sqlitex/database.hh>
+#include <sqlitex/rstream.hh>
 
 void
 sqlite::rstream::dump(std::ostream& out) {
@@ -20,5 +22,8 @@ sqlite::rstream::dump(std::ostream& out) {
 	}
 }
 
+sqlite::static_database sqlite::rstream::database() {
+	return static_database(::sqlite3_db_handle(this->_stmt));
+}
 
 #endif // vim:filetype=cpp

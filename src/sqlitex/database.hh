@@ -5,18 +5,17 @@
 
 #include <sqlitex/call.hh>
 #include <sqlitex/encoding.hh>
+#include <sqlitex/forward.hh>
+#include <sqlitex/mutex.hh>
 #include <sqlitex/open.hh>
 #include <sqlitex/rstream.hh>
 
 namespace sqlite {
 
-	typedef ::sqlite3 db_type;
-	typedef void (*scalar_function_t)(::sqlite3_context*,int,::sqlite3_value**);
-
 	class database {
 
 	private:
-		db_type* _db = nullptr;
+		types::database* _db = nullptr;
 
 	public:
 
@@ -76,25 +75,39 @@ namespace sqlite {
 			}
 		}
 
-		inline void
-		flush() {
-			call(::sqlite3_db_cacheflush(this->_db));
+		inline void flush() { call(::sqlite3_db_cacheflush(this->_db)); }
+		inline const types::database* db() const { return this->_db; }
+		inline types::database* db() { return this->_db; }
+
+		inline const char*
+		filename(const char* name="main") const {
+			return ::sqlite3_db_filename(this->_db, name);
 		}
 
-		inline const db_type*
-		db() const noexcept {
-			return this->_db;
+		inline bool
+		read_only(const char* name="main") const {
+			return ::sqlite3_db_readonly(this->_db, name) != 0;
 		}
 
-		inline db_type*
-		db() noexcept {
-			return this->_db;
+		inline void*
+		commit_hook(types::commit_hook rhs, void* ptr=nullptr) {
+			return ::sqlite3_commit_hook(this->_db, rhs, ptr);
+		}
+
+		inline void*
+		rollback_hook(types::rollback_hook rhs, void* ptr=nullptr) {
+			return ::sqlite3_rollback_hook(this->_db, rhs, ptr);
+		}
+
+		inline void*
+		update_hook(types::update_hook rhs, void* ptr=nullptr) {
+			return ::sqlite3_update_hook(this->_db, rhs, ptr);
 		}
 
 		template <class ... Args>
 		inline rstream
 		prepare(const std::string& sql, const Args& ... args) {
-			statement_type* stmt = nullptr;
+			types::statement* stmt = nullptr;
 			call(
 				::sqlite3_prepare_v2(
 					this->_db,
@@ -127,6 +140,11 @@ namespace sqlite {
 			return ::sqlite3_changes(this->_db);
 		}
 
+		inline int
+		total_rows_modified() const noexcept {
+			return ::sqlite3_total_changes(this->_db);
+		}
+
 		inline int64_t
 		last_insert_row_id() const noexcept {
 			return ::sqlite3_last_insert_rowid(this->_db);
@@ -147,10 +165,7 @@ namespace sqlite {
 			this->execute("ATTACH DATABASE ? AS ?", path, name);
 		}
 
-		inline void
-		vacuum() {
-			this->execute("VACUUM");
-		}
+		inline void vacuum() { this->execute("VACUUM"); }
 
 		inline void
 		user_version(int64_t version, const char* name="main") {
@@ -197,9 +212,71 @@ namespace sqlite {
 		}
 
 		inline void
-		enable_foreign_keys() {
-			this->execute("PRAGMA foreign_keys=1");
+		busy_handler(types::busy_handler handler, void* data) {
+			call(::sqlite3_busy_handler(this->_db, handler, data));
 		}
+
+		inline int release_memory() { return ::sqlite3_db_release_memory(this->_db); }
+
+		inline void
+		foreign_keys(int enable) {
+			this->configure_int(SQLITE_DBCONFIG_ENABLE_FKEY, enable);
+		}
+
+		inline void
+		triggers(int enable) {
+			this->configure_int(SQLITE_DBCONFIG_ENABLE_TRIGGER, enable);
+		}
+
+		inline void
+		full_text_search(int enable) {
+			this->configure_int(SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER, enable);
+		}
+
+		inline void
+		extensions(int enable) {
+			this->configure_int(SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION, enable);
+		}
+
+		inline void
+		sql_extensions(int enable) {
+			call(::sqlite3_enable_load_extension(this->_db, enable));
+		}
+
+		inline void
+		no_checkpoint_on_close(int enable) {
+			this->configure_int(SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE, enable);
+		}
+
+		inline void
+		stable_queries(int enable) {
+			this->configure_int(SQLITE_DBCONFIG_ENABLE_QPSG, enable);
+		}
+
+		inline void
+		explain_triggers(int enable) {
+			this->configure_int(SQLITE_DBCONFIG_TRIGGER_EQP, enable);
+		}
+
+		inline void
+		extended_error_codes(int enable) {
+			call(::sqlite3_extended_result_codes(this->_db, enable));
+		}
+
+		inline void
+		lookaside(size_t slot_size, size_t nslots, void* buffer=nullptr) {
+			call(::sqlite3_db_config(
+				this->_db, SQLITE_DBCONFIG_LOOKASIDE,
+				buffer, slot_size, nslots
+			));
+		}
+
+		inline void
+		name(const char* name) {
+			call(::sqlite3_db_config(this->_db, SQLITE_DBCONFIG_MAINDBNAME, name));
+		}
+
+		inline void interrupt() { ::sqlite3_interrupt(this->_db); }
 
 		inline bool
 		is_in_auto_commit_mode() {
@@ -213,7 +290,7 @@ namespace sqlite {
 
 		inline void
 		scalar_function(
-			scalar_function_t func,
+			types::scalar_function func,
 			const char* name,
 			int narguments,
 			encoding enc = encoding::utf8,
@@ -267,10 +344,33 @@ namespace sqlite {
 			return sqlite_errc(::sqlite3_extended_errcode(this->_db));
 		}
 
+		inline std::errc
+		system_error_code() const {
+			return std::errc(::sqlite3_system_errno(this->_db));
+		}
+
+		inline const char* error_message() const { return ::sqlite3_errmsg(this->_db); }
+
+		inline static_mutex
+		mutex() const {
+			return static_mutex(::sqlite3_db_mutex(this->_db));
+		}
+
+		inline int
+		limit(::sqlite::limit key, int value) {
+			return ::sqlite3_limit(this->_db, int(key), value);
+		}
+
+		inline int limit(::sqlite::limit key) { return this->limit(key, -1); }
+
 		inline void
 		swap(database& rhs) {
 			std::swap(this->_db, rhs._db);
 		}
+
+	protected:
+		inline void reset() { this->_db = nullptr; }
+		inline explicit database(types::database* db): _db(db) {}
 
 	private:
 
@@ -285,13 +385,20 @@ namespace sqlite {
 			);
 		}
 
+		inline void configure_int(int key, int value) {
+			call(::sqlite3_db_config(this->_db, key, value, nullptr));
+		}
 
 	};
 
-	inline void
-	swap(database& lhs, database& rhs) {
-		lhs.swap(rhs);
-	}
+	inline void swap(database& lhs, database& rhs) { lhs.swap(rhs); }
+
+	class static_database: public database {
+	public:
+		inline explicit static_database(types::database* db): database(db) {}
+		inline ~static_database() { this->reset(); }
+		static_database(static_database&&) = default;
+	};
 
 }
 

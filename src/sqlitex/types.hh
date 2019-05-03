@@ -1,11 +1,10 @@
 #ifndef SQLITE_TYPES_HH
 #define SQLITE_TYPES_HH
 
-#include <sqlite3.h>
-
-#include <chrono>
 #include <memory>
 #include <string>
+
+#include <sqlitex/forward.hh>
 
 namespace sqlite {
 
@@ -44,14 +43,6 @@ namespace sqlite {
 			return this->std::string::data();
 		}
 
-	};
-
-	enum class data_type {
-		integer = SQLITE_INTEGER,
-		floating_point = SQLITE_FLOAT,
-		blob = SQLITE_BLOB,
-		null = SQLITE_NULL,
-		text = SQLITE_TEXT,
 	};
 
 }

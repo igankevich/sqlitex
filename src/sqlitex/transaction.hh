@@ -15,13 +15,12 @@ namespace sqlite {
 			NAME(database& db): _db(db) { \
 				this->_db.execute("BEGIN " type " TRANSACTION"); \
 			} \
-			~NAME() { \
+			inline ~NAME() { \
 				if (!this->_success) { \
 					this->_db.execute("ROLLBACK"); \
 				} \
 			} \
-			inline void \
-			commit() { \
+			inline void commit() { \
 				this->_db.execute("COMMIT"); \
 				this->_success = true; \
 			} \

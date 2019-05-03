@@ -2,10 +2,9 @@
 #define SQLITEX_BACKUP_HH
 
 #include <sqlitex/database.hh>
+#include <sqlitex/forward.hh>
 
 namespace sqlite {
-
-	typedef ::sqlite3_backup backup_type;
 
 	class backup {
 
