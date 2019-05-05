@@ -7,7 +7,7 @@
 
 namespace sqlite {
 
-	enum struct sqlite_errc: int {
+	enum struct errc: int {
 		// primary result codes
 		ok = SQLITE_OK,
 		error = SQLITE_ERROR,
@@ -125,10 +125,10 @@ namespace sqlite {
 namespace std {
 
 	template<>
-	struct is_error_condition_enum<sqlite::sqlite_errc>: true_type {};
+	struct is_error_condition_enum<sqlite::errc>: true_type {};
 
 	inline error_condition
-	make_error_condition(sqlite::sqlite_errc e) noexcept;
+	make_error_condition(sqlite::errc e) noexcept;
 
 }
 

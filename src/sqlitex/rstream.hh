@@ -7,9 +7,11 @@
 
 #include <unistdx/it/basic_istream_iterator>
 
+#include <sqlitex/allocator.hh>
 #include <sqlitex/any.hh>
 #include <sqlitex/call.hh>
 #include <sqlitex/forward.hh>
+#include <sqlitex/named_ptr.hh>
 #include <sqlitex/rstream_base.hh>
 #include <sqlitex/types.hh>
 
@@ -89,13 +91,16 @@ namespace sqlite {
 			}
 		}
 
+		inline bool read_only() const { return ::sqlite3_stmt_readonly(this->_stmt); }
+		inline bool busy() const { return ::sqlite3_stmt_busy(this->_stmt); }
+
 		inline void
 		step() {
-			sqlite_errc ret = sqlite_errc(::sqlite3_step(this->_stmt));
-			if (ret == sqlite_errc::row) {
+			errc ret = errc(::sqlite3_step(this->_stmt));
+			if (ret == errc::row) {
 				return;
 			}
-			if (ret == sqlite_errc::done) {
+			if (ret == errc::done) {
 				this->setstate(eofbit);
 			} else {
 				this->setstate(failbit);
@@ -103,10 +108,8 @@ namespace sqlite {
 			}
 		}
 
-		inline void
-		reset() {
-			call(::sqlite3_reset(this->_stmt));
-		}
+		inline int num_columns() const { return ::sqlite3_column_count(this->_stmt); }
+		inline void reset() { call(::sqlite3_reset(this->_stmt)); }
 
 		inline int
 		num_parameters() const noexcept {
@@ -153,27 +156,62 @@ namespace sqlite {
 			call(::sqlite3_bind_text(this->_stmt, index, value, -1, SQLITE_STATIC));
 		}
 
-		template <class Ch, class Tr, class Alloc>
+		template <class Alloc>
 		inline void
-		bind(int index, const std::basic_string<Ch,Tr,Alloc>& value) {
-			call(::sqlite3_bind_text(
+		bind(int index, const basic_u8string<Alloc>& value) {
+			call(::sqlite3_bind_text64(
 				this->_stmt,
 				index,
 				value.data(),
 				value.size(),
-				SQLITE_TRANSIENT
+				SQLITE_TRANSIENT,
+				encoding::utf8
+			));
+		}
+
+		template <class Alloc>
+		inline void
+		bind(int index, const basic_u16string<Alloc>& value) {
+			call(::sqlite3_bind_text64(
+				this->_stmt,
+				index,
+				reinterpret_cast<const char*>(value.data()),
+				value.size()*sizeof(char16_t),
+				SQLITE_TRANSIENT,
+				encoding::utf16
+			));
+		}
+
+		inline void
+		bind(int index, const any& value) {
+			call(::sqlite3_bind_value(this->_stmt, index, value.get()));
+		}
+
+		inline void
+		bind(int index, const named_ptr& value) {
+			call(::sqlite3_bind_pointer(
+				this->_stmt,
+				index,
+				value.get(),
+				value.name(),
+				nullptr
 			));
 		}
 
 		inline void
 		bind(int index, const blob& value) {
-			call(::sqlite3_bind_blob(
+			call(::sqlite3_bind_blob64(
 				this->_stmt,
 				index,
 				value.ptr(),
 				value.size(),
 				SQLITE_TRANSIENT
 			));
+		}
+
+		inline void
+		bind(int index, const zeroes& value) {
+			call(::sqlite3_bind_zeroblob64(this->_stmt, index, value.size()));
 		}
 
 		template <class Clock, class Duration>
@@ -224,6 +262,67 @@ namespace sqlite {
 
 		static_database database();
 
+		inline const char*
+		column_name(int i) const {
+			return ::sqlite3_column_name(this->_stmt, i);
+		}
+
+		template <encoding enc>
+		inline typename encoding_traits<enc>::string
+		column_name(int i) const;
+
+		inline data_type
+		column_type(int i) const {
+			return static_cast<data_type>(
+				::sqlite3_column_type(this->_stmt, i)
+			);
+		}
+
+		inline const char*
+		database_name(int i) const {
+			return ::sqlite3_column_database_name(this->_stmt, i);
+		}
+
+		template <encoding enc>
+		inline typename encoding_traits<enc>::string
+		database_name(int i) const;
+
+		inline const char*
+		table_name(int i) const {
+			return ::sqlite3_column_table_name(this->_stmt, i);
+		}
+
+		template <encoding enc>
+		inline typename encoding_traits<enc>::string
+		table_name(int i) const;
+
+		inline const char*
+		origin_name(int i) const {
+			return ::sqlite3_column_origin_name(this->_stmt, i);
+		}
+
+		template <encoding enc>
+		inline typename encoding_traits<enc>::string
+		origin_name(int i) const;
+
+		inline const char*
+		column_type_name(int i) const {
+			return ::sqlite3_column_decltype(this->_stmt, i);
+		}
+
+		template <encoding enc>
+		inline typename encoding_traits<enc>::string
+		column_type_name(int i) const;
+
+		inline int
+		column_size(int i) const {
+			return ::sqlite3_column_bytes(this->_stmt, i);
+		}
+
+		template <encoding enc>
+		inline int
+		column_size(int i) const;
+
 	};
 
 	inline void
@@ -243,8 +342,8 @@ namespace sqlite {
 
 	private:
 		rstream& _rstr;
-		int _col = 0;
-		int _ncols = 0;
+		int _column = 0;
+		int _ncolumns = 0;
 
 	public:
 
@@ -261,39 +360,27 @@ namespace sqlite {
 
 		inline void
 		init(rstream& rhs) {
-			this->_col = 0;
-			this->_ncols = ::sqlite3_data_count(this->_rstr.statement());
+			this->_column = 0;
+			this->_ncolumns = ::sqlite3_data_count(this->_rstr.statement());
 		}
 
 		inline void
 		reset() {
-			this->_col = 0;
-			this->_ncols = 0;
+			this->_column = 0;
+			this->_ncolumns = 0;
 		}
 
-		inline bool
-		eof() const noexcept {
-			return this->_col == this->_ncols;
-		}
-
-		inline bool
-		good() const noexcept {
-			return !this->eof();
-		}
-
-		inline data_type
-		column_type() const noexcept {
-			return static_cast<data_type>(
-				::sqlite3_column_type(this->_rstr.statement(), this->_col)
-			);
-		}
+		inline bool eof() const { return this->_column == this->_ncolumns; }
+		inline bool good() const { return !this->eof(); }
+		inline const rstream& parent() const { return this->_rstr; }
+		inline data_type column_type() const { return parent().column_type(this->_column); }
 
 		inline cstream&
 		operator>>(float& rhs) {
 			if (this->good()) {
-				auto d = ::sqlite3_column_double(this->_rstr.statement(), this->_col);
+				auto d = ::sqlite3_column_double(this->_rstr.statement(), this->_column);
 				rhs = static_cast<float>(d);
-				++this->_col;
+				++this->_column;
 			}
 			return *this;
 		}
@@ -301,8 +388,8 @@ namespace sqlite {
 		inline cstream&
 		operator>>(double& rhs) {
 			if (this->good()) {
-				rhs = ::sqlite3_column_double(this->_rstr.statement(), this->_col);
-				++this->_col;
+				rhs = ::sqlite3_column_double(this->_rstr.statement(), this->_column);
+				++this->_column;
 			}
 			return *this;
 		}
@@ -310,8 +397,8 @@ namespace sqlite {
 		inline cstream&
 		operator>>(int& rhs) {
 			if (this->good()) {
-				rhs = ::sqlite3_column_int(this->_rstr.statement(), this->_col);
-				++this->_col;
+				rhs = ::sqlite3_column_int(this->_rstr.statement(), this->_column);
+				++this->_column;
 			}
 			return *this;
 		}
@@ -327,8 +414,8 @@ namespace sqlite {
 		inline cstream&
 		operator>>(int64_t& rhs) {
 			if (this->good()) {
-				rhs = ::sqlite3_column_int64(this->_rstr.statement(), this->_col);
-				++this->_col;
+				rhs = ::sqlite3_column_int64(this->_rstr.statement(), this->_column);
+				++this->_column;
 			}
 			return *this;
 		}
@@ -341,27 +428,28 @@ namespace sqlite {
 			return *this;
 		}
 
+		template <class Alloc>
 		inline cstream&
-		operator>>(std::string& rhs) {
+		operator>>(basic_u8string<Alloc>& rhs) {
+			using char_type = typename basic_u8string<Alloc>::value_type;
 			if (this->good()) {
-				auto result = ::sqlite3_column_text(this->_rstr.statement(), this->_col);
-				if (!result) {
-					rhs.clear();
-				} else {
-					rhs = reinterpret_cast<const std::string::value_type*>(result);
-				}
-				++this->_col;
+				auto result = ::sqlite3_column_text(this->_rstr.statement(), this->_column);
+				if (!result) { rhs.clear(); }
+				else { rhs = reinterpret_cast<const char_type*>(result); }
+				++this->_column;
 			}
 			return *this;
 		}
 
+		template <class Alloc>
 		inline cstream&
-		operator>>(std::u16string& rhs) {
+		operator>>(basic_u16string<Alloc>& rhs) {
+			using char_type = typename basic_u16string<Alloc>::value_type;
 			if (this->good()) {
-				auto result = ::sqlite3_column_text16(this->_rstr.statement(), this->_col);
+				auto result = ::sqlite3_column_text16(this->_rstr.statement(), this->_column);
 				if (!result) { rhs.clear(); }
-				else { rhs = reinterpret_cast<const std::u16string::value_type*>(result); }
-				++this->_col;
+				else { rhs = static_cast<const char_type*>(result); }
+				++this->_column;
 			}
 			return *this;
 		}
@@ -370,15 +458,15 @@ namespace sqlite {
 		operator>>(blob& rhs) {
 			if (this->good()) {
 				const void* result =
-					::sqlite3_column_blob(this->_rstr.statement(), this->_col);
+					::sqlite3_column_blob(this->_rstr.statement(), this->_column);
 				const int n =
-					::sqlite3_column_bytes(this->_rstr.statement(), this->_col);
+					::sqlite3_column_bytes(this->_rstr.statement(), this->_column);
 				if (!result) {
 					rhs.clear();
 				} else {
 					rhs.assign(reinterpret_cast<const char*>(result), n);
 				}
-				++this->_col;
+				++this->_column;
 			}
 			return *this;
 		}
@@ -386,8 +474,8 @@ namespace sqlite {
 		inline cstream&
 		operator>>(any_base& rhs) {
 			if (this->good()) {
-				rhs.clear(::sqlite3_column_value(this->_rstr.statement(), this->_col));
-				++this->_col;
+				rhs.clear(::sqlite3_column_value(this->_rstr.statement(), this->_column));
+				++this->_column;
 			}
 			return *this;
 		}
@@ -396,17 +484,14 @@ namespace sqlite {
 		inline cstream&
 		operator>>(std::chrono::time_point<Clock,Duration>& rhs) {
 			if (this->good()) {
-				auto value = ::sqlite3_column_int64(this->_rstr.statement(), this->_col);
+				auto value = ::sqlite3_column_int64(this->_rstr.statement(), this->_column);
 				rhs = Clock::from_time_t(static_cast<std::time_t>(value));
-				++this->_col;
+				++this->_column;
 			}
 			return *this;
 		}
 
-		inline int
-		num_columns() const noexcept {
-			return this->_ncols;
-		}
+		inline int num_columns() const { return this->_ncolumns; }
 
 	};
 
@@ -438,6 +523,88 @@ namespace sqlite {
 	inline void
 	bind(rstream& rstr, const Head& head, const Tail& ... tail) {
 		bind(rstr, 1, tail...);
+	}
+
+	template <>
+	inline u8string
+	rstream::column_name<encoding::utf8>(int i) const {
+		return ::sqlite3_column_name(this->_stmt, i);
+	}
+
+	template <>
+	inline u16string
+	rstream::column_name<encoding::utf16>(int i) const {
+		return reinterpret_cast<const char16_t*>(
+			::sqlite3_column_name16(this->_stmt, i)
+		);
+	}
+
+	template <>
+	inline u8string
+	rstream::database_name<encoding::utf8>(int i) const {
+		return ::sqlite3_column_database_name(this->_stmt, i);
+	}
+
+	template <>
+	inline u16string
+	rstream::database_name<encoding::utf16>(int i) const {
+		return reinterpret_cast<const char16_t*>(
+			::sqlite3_column_database_name16(this->_stmt, i)
+		);
+	}
+
+	template <>
+	inline u8string
+	rstream::table_name<encoding::utf8>(int i) const {
+		return ::sqlite3_column_table_name(this->_stmt, i);
+	}
+
+	template <>
+	inline u16string
+	rstream::table_name<encoding::utf16>(int i) const {
+		return reinterpret_cast<const char16_t*>(
+			::sqlite3_column_table_name16(this->_stmt, i)
+		);
+	}
+
+	template <>
+	inline u8string
+	rstream::origin_name<encoding::utf8>(int i) const {
+		return ::sqlite3_column_origin_name(this->_stmt, i);
+	}
+
+	template <>
+	inline u16string
+	rstream::origin_name<encoding::utf16>(int i) const {
+		return reinterpret_cast<const char16_t*>(
+			::sqlite3_column_origin_name16(this->_stmt, i)
+		);
+	}
+
+	template <>
+	inline u8string
+	rstream::column_type_name<encoding::utf8>(int i) const {
+		return ::sqlite3_column_decltype(this->_stmt, i);
+	}
+
+	template <>
+	inline u16string
+	rstream::column_type_name<encoding::utf16>(int i) const {
+		return reinterpret_cast<const char16_t*>(
+			::sqlite3_column_decltype16(this->_stmt, i)
+		);
+	}
+
+	template <>
+	inline int
+	rstream::column_size<encoding::utf8>(int i) const {
+		return ::sqlite3_column_bytes(this->_stmt, i);
+	}
+
+	template <>
+	inline int
+	rstream::column_size<encoding::utf16>(int i) const {
+		return ::sqlite3_column_bytes16(this->_stmt, i);
 	}
 
 }

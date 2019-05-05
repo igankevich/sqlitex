@@ -17,7 +17,7 @@ namespace sqlite {
 		using const_pointer = const value_type*;
 		using reference = value_type&;
 		using const_reference = const value_type&;
-		using size_type = types::uint64;
+		using size_type = uint64;
 		using difference_type = std::make_signed<size_type>::type;
 		template <class U>
 		struct rebind { using other = allocator<U>; };
@@ -30,20 +30,20 @@ namespace sqlite {
 		allocator& operator=(const allocator&) = default;
 		allocator(allocator&&) = default;
 		allocator& operator=(allocator&&) = default;
-		template <class U> allocator(const allocator<U,F>& rhs) {}
+		template <class U> allocator(const allocator<U>& rhs) {}
 
-		inline value_type*
+		inline pointer
 		allocate(size_type n) {
 			auto ptr = ::sqlite3_malloc64(n*sizeof(value_type));
-			if (!ptr) { throw std::bad_alloc("sqlite3_malloc64"); }
-			return ptr;
+			if (!ptr) { throw std::bad_alloc(); }
+			return static_cast<pointer>(ptr);
 		}
 
-		inline value_type*
-		reallocate(size_type n) {
-			auto ptr = ::sqlite3_realloc64(n*sizeof(value_type));
-			if (!ptr) { throw std::bad_alloc("sqlite3_realloc64"); }
-			return ptr;
+		inline pointer
+		reallocate(pointer p, size_type n) {
+			auto ptr = ::sqlite3_realloc64(p, n*sizeof(value_type));
+			if (!ptr) { throw std::bad_alloc(); }
+			return static_cast<pointer>(ptr);
 		}
 
 		inline size_type size(pointer p) const { return ::sqlite3_msize(p); }

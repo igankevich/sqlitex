@@ -1,6 +1,6 @@
 sqlite_src = files([
 	'error_category.cc',
-	'rstream.cc'
+	'rstream.cc',
 ])
 sqlite_deps = [sqlite3]
 sqlite_name = 'sqlitex'

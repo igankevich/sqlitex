@@ -8,16 +8,6 @@
 
 namespace sqlite {
 
-	struct sqlite_deleter {
-		inline void
-		operator()(void* ptr) {
-			::sqlite3_free(ptr);
-		}
-	};
-
-	template <class T>
-	using unique_ptr = std::unique_ptr<T,sqlite_deleter>;
-
 	struct blob: public std::string {
 
 		using std::string::string;
@@ -42,6 +32,17 @@ namespace sqlite {
 		ptr() const {
 			return this->std::string::data();
 		}
+
+	};
+
+	class zeroes {
+
+	private:
+		uint64 _size = 0;
+
+	public:
+		inline explicit zeroes(uint64 size): _size(size) {}
+		inline uint64 size() const { return this->_size; }
 
 	};
 

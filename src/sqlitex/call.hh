@@ -5,16 +5,16 @@
 
 namespace sqlite {
 
-	inline sqlite_errc
+	inline errc
 	call(int ret) {
-		if (ret != int(sqlite_errc::ok)) {
+		if (ret != int(errc::ok)) {
 			throw std::system_error(ret, sqlite_category);
 		}
-		return sqlite_errc(ret);
+		return errc(ret);
 	}
 
 	inline void
-	throw_error(sqlite_errc err) {
+	throw_error(errc err) {
 		throw std::system_error(int(err), sqlite_category);
 	}
 

@@ -3,17 +3,17 @@
 - [X] sqlite3_libversion
 - [X] sqlite3_sourceid
 - [X] sqlite3_libversion_number
-- [ ] sqlite3_compileoption_used
-- [ ] sqlite3_compileoption_get
-- [ ] sqlite3_threadsafe
+- [X] sqlite3_compileoption_used
+- [X] sqlite3_compileoption_get
+- [X] sqlite3_threadsafe
 - [X] sqlite3_close
-- [ ] sqlite3_close_v2
+- [X] sqlite3_close_v2
 - [X] sqlite3_exec
-- [ ] sqlite3_initialize
-- [ ] sqlite3_shutdown
-- [ ] sqlite3_os_init
-- [ ] sqlite3_os_end
-- [ ] sqlite3_config
+- [X] sqlite3_initialize
+- [X] sqlite3_shutdown
+- [X] sqlite3_os_init
+- [X] sqlite3_os_end
+- [X] sqlite3_config
 - [X] sqlite3_db_config
 - [X] sqlite3_extended_result_codes
 - [X] sqlite3_set_last_insert_rowid
@@ -22,76 +22,77 @@
 - [X] sqlite3_total_changes
 - [X] sqlite3_interrupt
 - [X] sqlite3_complete
-- [ ] sqlite3_complete16
+- [X] sqlite3_complete16
 - [X] sqlite3_busy_handler
 - [X] sqlite3_busy_timeout
-- [ ] sqlite3_get_table
-- [ ] sqlite3_free_table
-- [ ] sqlite3_mprintf
-- [ ] sqlite3_vmprintf
-- [ ] sqlite3_snprintf
-- [ ] sqlite3_vsnprintf
-- [ ] sqlite3_malloc
+- [X] sqlite3_get_table (legacy)
+- [X] sqlite3_free_table (legacy)
+- [X] sqlite3_mprintf
+- [X] sqlite3_vmprintf (not needed in C++)
+- [X] sqlite3_snprintf (not needed in C++)
+- [X] sqlite3_vsnprintf (not needed in C++)
+- [X] sqlite3_malloc (legacy)
 - [X] sqlite3_malloc64
-- [ ] sqlite3_realloc
+- [X] sqlite3_realloc (legacy)
 - [X] sqlite3_realloc64
 - [X] sqlite3_free
 - [X] sqlite3_msize
 - [X] sqlite3_memory_used
 - [X] sqlite3_memory_highwater
 - [X] sqlite3_randomness
-- [ ] sqlite3_set_authorizer
-- [ ] sqlite3_trace_v2
-- [ ] sqlite3_progress_handler
-- [ ] sqlite3_open
-- [ ] sqlite3_open16
+- [X] sqlite3_set_authorizer
+- [X] sqlite3_trace_v2
+- [X] sqlite3_progress_handler
+- [X] sqlite3_open
+- [X] sqlite3_open16
 - [X] sqlite3_open_v2
-- [ ] sqlite3_uri_parameter
-- [ ] sqlite3_uri_boolean
+- [X] sqlite3_uri_parameter
+- [X] sqlite3_uri_boolean
+- [X] sqlite3_uri_int64
 - [X] sqlite3_errcode
 - [X] sqlite3_extended_errcode
 - [X] sqlite3_errmsg
-- [ ] sqlite3_errmsg16
+- [X] sqlite3_errmsg16
 - [X] sqlite3_errstr
 - [X] sqlite3_limit
-- [ ] sqlite3_prepare
+- [X] sqlite3_prepare (legacy)
 - [X] sqlite3_prepare_v2
-- [ ] sqlite3_prepare_v3
-- [ ] sqlite3_prepare16
-- [ ] sqlite3_prepare16_v2
-- [ ] sqlite3_prepare16_v3
+- [X] sqlite3_prepare_v3
+- [X] sqlite3_prepare16 (legacy)
+- [X] sqlite3_prepare16_v2
+- [X] sqlite3_prepare16_v3
 - [X] sqlite3_sql
 - [X] sqlite3_expanded_sql
-- [ ] sqlite3_stmt_readonly
-- [ ] sqlite3_stmt_busy
-- [X] sqlite3_bind_blob
-- [ ] sqlite3_bind_blob64
+- [X] sqlite3_stmt_readonly
+- [X] sqlite3_stmt_busy
+- [X] sqlite3_bind_blob (legacy)
+- [X] sqlite3_bind_blob64
 - [X] sqlite3_bind_double
 - [X] sqlite3_bind_int
 - [X] sqlite3_bind_int64
 - [X] sqlite3_bind_null
-- [X] sqlite3_bind_text
-- [ ] sqlite3_bind_text16
-- [ ] sqlite3_bind_text64
-- [ ] sqlite3_bind_value
-- [ ] sqlite3_bind_pointer
-- [ ] sqlite3_bind_zeroblob
-- [ ] sqlite3_bind_zeroblob64
+- [X] sqlite3_bind_text (legacy)
+- [X] sqlite3_bind_text16 (legacy)
+- [X] sqlite3_bind_text64
+- [X] sqlite3_bind_value
+- [X] sqlite3_bind_pointer
+- [X] sqlite3_bind_zeroblob (legacy)
+- [X] sqlite3_bind_zeroblob64
 - [X] sqlite3_bind_parameter_count
 - [X] sqlite3_bind_parameter_name
 - [X] sqlite3_bind_parameter_index
 - [X] sqlite3_clear_bindings
-- [ ] sqlite3_column_count
-- [ ] sqlite3_column_name
-- [ ] sqlite3_column_name16
-- [ ] sqlite3_column_database_name
-- [ ] sqlite3_column_database_name16
-- [ ] sqlite3_column_table_name
-- [ ] sqlite3_column_table_name16
-- [ ] sqlite3_column_origin_name
-- [ ] sqlite3_column_origin_name16
-- [ ] sqlite3_column_decltype
-- [ ] sqlite3_column_decltype16
+- [X] sqlite3_column_count
+- [X] sqlite3_column_name
+- [X] sqlite3_column_name16
+- [X] sqlite3_column_database_name
+- [X] sqlite3_column_database_name16
+- [X] sqlite3_column_table_name
+- [X] sqlite3_column_table_name16
+- [X] sqlite3_column_origin_name
+- [X] sqlite3_column_origin_name16
+- [X] sqlite3_column_decltype
+- [X] sqlite3_column_decltype16
 - [X] sqlite3_step
 - [X] sqlite3_data_count
 - [X] sqlite3_column_blob
@@ -102,12 +103,12 @@
 - [X] sqlite3_column_text16
 - [X] sqlite3_column_value
 - [X] sqlite3_column_bytes
-- [ ] sqlite3_column_bytes16
+- [X] sqlite3_column_bytes16
 - [X] sqlite3_column_type
 - [X] sqlite3_finalize
 - [X] sqlite3_reset
-- [ ] sqlite3_create_function
-- [ ] sqlite3_create_function16
+- [X] sqlite3_create_function (legacy)
+- [X] sqlite3_create_function16 (legacy)
 - [X] sqlite3_create_function_v2
 - [X] sqlite3_value_blob
 - [X] sqlite3_value_double
@@ -126,9 +127,9 @@
 - [X] sqlite3_value_subtype
 - [X] sqlite3_value_dup
 - [X] sqlite3_value_free
-- [ ] sqlite3_aggregate_context
-- [ ] sqlite3_user_data
-- [ ] sqlite3_context_db_handle
+- [X] sqlite3_aggregate_context
+- [X] sqlite3_user_data
+- [X] sqlite3_context_db_handle
 - [ ] sqlite3_get_auxdata
 - [ ] sqlite3_set_auxdata
 - [ ] sqlite3_result_blob

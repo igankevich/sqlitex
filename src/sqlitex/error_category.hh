@@ -35,7 +35,7 @@ namespace sqlite {
 
 namespace std {
 	inline error_condition
-	make_error_condition(sqlite::sqlite_errc e) noexcept {
+	make_error_condition(sqlite::errc e) noexcept {
 		return std::error_condition(
 			static_cast<int>(e),
 			sqlite::sqlite_category

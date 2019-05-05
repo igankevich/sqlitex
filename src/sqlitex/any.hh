@@ -3,7 +3,9 @@
 
 #include <string>
 
+#include <sqlitex/allocator.hh>
 #include <sqlitex/forward.hh>
+#include <sqlitex/named_ptr.hh>
 #include <sqlitex/types.hh>
 
 namespace sqlite {
@@ -75,19 +77,27 @@ namespace sqlite {
 	template <> double
 	any_cast<double>(const any& value) { return ::sqlite3_value_double(value._ptr); }
 
-	template <> std::string
-	any_cast<std::string>(const any& value) {
+	template <> string
+	any_cast<string>(const any& value) {
 		auto ptr = ::sqlite3_value_text(value._ptr);
-		std::string result;
-		result = reinterpret_cast<const std::string::value_type*>(ptr);
+		string result;
+		result = reinterpret_cast<const string::value_type*>(ptr);
 		return result;
 	}
 
-	template <> std::u16string
-	any_cast<std::u16string>(const any& value) {
+	template <> u8string
+	any_cast<u8string>(const any& value) {
+		auto ptr = ::sqlite3_value_text(value._ptr);
+		u8string result;
+		result = reinterpret_cast<const u8string::value_type*>(ptr);
+		return result;
+	}
+
+	template <> u16string
+	any_cast<u16string>(const any& value) {
 		auto ptr = ::sqlite3_value_text16(value._ptr);
-		std::u16string result;
-		result = reinterpret_cast<const std::u16string::value_type*>(ptr);
+		u16string result;
+		result = reinterpret_cast<const u16string::value_type*>(ptr);
 		return result;
 	}
 

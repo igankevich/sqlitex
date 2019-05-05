@@ -47,13 +47,13 @@ namespace sqlite {
 
 		inline void
 		step(int npages=-1) {
-			sqlite_errc ret =
-				sqlite_errc(::sqlite3_backup_step(this->_backup, npages));
-			if (ret == sqlite_errc::done) {
+			errc ret =
+				errc(::sqlite3_backup_step(this->_backup, npages));
+			if (ret == errc::done) {
 				this->_done = true;
 				return;
 			}
-			if (ret == sqlite_errc::ok) {
+			if (ret == errc::ok) {
 				return;
 			}
 			throw_error(ret);
