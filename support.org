@@ -117,8 +117,8 @@
 - [X] sqlite3_value_pointer
 - [X] sqlite3_value_text
 - [X] sqlite3_value_text16
-- [ ] sqlite3_value_text16le
-- [ ] sqlite3_value_text16be
+- [X] sqlite3_value_text16le
+- [X] sqlite3_value_text16be
 - [X] sqlite3_value_bytes
 - [X] sqlite3_value_bytes16
 - [X] sqlite3_value_type
@@ -130,29 +130,29 @@
 - [X] sqlite3_aggregate_context
 - [X] sqlite3_user_data
 - [X] sqlite3_context_db_handle
-- [ ] sqlite3_get_auxdata
-- [ ] sqlite3_set_auxdata
-- [ ] sqlite3_result_blob
-- [ ] sqlite3_result_blob64
-- [ ] sqlite3_result_double
-- [ ] sqlite3_result_error
-- [ ] sqlite3_result_error16
-- [ ] sqlite3_result_error_toobig
-- [ ] sqlite3_result_error_nomem
-- [ ] sqlite3_result_error_code
-- [ ] sqlite3_result_int
-- [ ] sqlite3_result_int64
-- [ ] sqlite3_result_null
-- [ ] sqlite3_result_text
-- [ ] sqlite3_result_text64
-- [ ] sqlite3_result_text16
-- [ ] sqlite3_result_text16le
-- [ ] sqlite3_result_text16be
-- [ ] sqlite3_result_value
-- [ ] sqlite3_result_pointer
-- [ ] sqlite3_result_zeroblob
-- [ ] sqlite3_result_zeroblob64
-- [ ] sqlite3_result_subtype
+- [X] sqlite3_get_auxdata
+- [X] sqlite3_set_auxdata
+- [X] sqlite3_result_blob (legacy)
+- [X] sqlite3_result_blob64
+- [X] sqlite3_result_double
+- [X] sqlite3_result_error
+- [X] sqlite3_result_error16
+- [X] sqlite3_result_error_toobig
+- [X] sqlite3_result_error_nomem
+- [X] sqlite3_result_error_code
+- [X] sqlite3_result_int
+- [X] sqlite3_result_int64
+- [X] sqlite3_result_null
+- [X] sqlite3_result_text
+- [X] sqlite3_result_text64
+- [X] sqlite3_result_text16 (text64 is better)
+- [X] sqlite3_result_text16le (text64 is better)
+- [X] sqlite3_result_text16be (text64 is better)
+- [X] sqlite3_result_value
+- [X] sqlite3_result_pointer
+- [X] sqlite3_result_zeroblob (legacy)
+- [X] sqlite3_result_zeroblob64
+- [X] sqlite3_result_subtype
 - [ ] sqlite3_create_collation
 - [ ] sqlite3_create_collation_v2
 - [ ] sqlite3_create_collation16

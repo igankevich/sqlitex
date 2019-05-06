@@ -9,6 +9,8 @@
 
 #include <sqlite3.h>
 
+#include <sqlitex/config.hh>
+
 namespace sqlite {
 
 	namespace types {
@@ -39,7 +41,12 @@ namespace sqlite {
 		using sql_log_callback = void(*)(void*,database*,const char*, int);
 		using page_cache = ::sqlite3_pcache;
 		using page = ::sqlite3_pcache_page;
+		using destructor = void (*)(void*);
 
+	}
+
+	namespace bits {
+		template <class T> inline void destroy(void* ptr) { delete reinterpret_cast<T*>(ptr); }
 	}
 
 	class cstream;

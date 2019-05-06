@@ -10,7 +10,7 @@
 
 namespace sqlite {
 
-	template <class T> T any_cast(const any& value);
+	template <class T, encoding enc=encoding{}> T any_cast(const any& value);
 
 	class any_base {
 
@@ -44,7 +44,7 @@ namespace sqlite {
 			return data_type(::sqlite3_value_numeric_type(this->_ptr));
 		}
 
-		template <class T> friend T any_cast(const any& value);
+		template <class T, encoding> friend T any_cast(const any& value);
 		friend void* any_cast(const any& value, const char* type);
 
 	};
@@ -86,19 +86,45 @@ namespace sqlite {
 	}
 
 	template <> u8string
-	any_cast<u8string>(const any& value) {
+	any_cast<u8string,encoding::utf8>(const any& value) {
 		auto ptr = ::sqlite3_value_text(value._ptr);
 		u8string result;
 		result = reinterpret_cast<const u8string::value_type*>(ptr);
 		return result;
 	}
 
+	template <> u8string
+	any_cast<u8string>(const any& value) {
+		return any_cast<u8string,encoding::utf8>(value);
+	}
+
 	template <> u16string
-	any_cast<u16string>(const any& value) {
+	any_cast<u16string,encoding::utf16>(const any& value) {
 		auto ptr = ::sqlite3_value_text16(value._ptr);
 		u16string result;
 		result = reinterpret_cast<const u16string::value_type*>(ptr);
 		return result;
+	}
+
+	template <> u16string
+	any_cast<u16string,encoding::utf16le>(const any& value) {
+		auto ptr = ::sqlite3_value_text16le(value._ptr);
+		u16string result;
+		result = reinterpret_cast<const u16string::value_type*>(ptr);
+		return result;
+	}
+
+	template <> u16string
+	any_cast<u16string,encoding::utf16be>(const any& value) {
+		auto ptr = ::sqlite3_value_text16be(value._ptr);
+		u16string result;
+		result = reinterpret_cast<const u16string::value_type*>(ptr);
+		return result;
+	}
+
+	template <> u16string
+	any_cast<u16string>(const any& value) {
+		return any_cast<u16string,encoding::utf16>(value);
 	}
 
 	template <> blob

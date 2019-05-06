@@ -361,7 +361,31 @@ namespace sqlite {
 		template <class Function>
 		inline void
 		scalar_function(
-			function* func,
+			Function func,
+			const char* name,
+			int narguments,
+			encoding enc = encoding::utf8,
+			bool deterministic = true
+		) {
+			int flags = static_cast<int>(enc);
+			Function* ptr = new Function(func);
+			if (deterministic) { flags |= SQLITE_DETERMINISTIC; }
+			call(::sqlite3_create_function_v2(
+				this->_db, name, narguments, flags, ptr,
+				[] (types::context* ctx, int nargs, types::value** args) {
+					context c(ctx);
+					c.data<Function>()->func(&c, nargs, reinterpret_cast<any_base*>(args));
+				},
+				nullptr,
+				nullptr,
+				bits::destroy<Function>
+			));
+		}
+
+		template <class Function>
+		inline void
+		scalar_function(
+			Function* func,
 			const char* name,
 			int narguments,
 			encoding enc = encoding::utf8,
@@ -373,7 +397,7 @@ namespace sqlite {
 				this->_db, name, narguments, flags, func,
 				[] (types::context* ctx, int nargs, types::value** args) {
 					context c(ctx);
-					c.data<Function>()->func(&c, nargs, reinterpret_cast<any**>(args));
+					c.data<Function>()->func(&c, nargs, reinterpret_cast<any_base*>(args));
 				},
 				nullptr,
 				nullptr,
@@ -384,7 +408,7 @@ namespace sqlite {
 		template <class Function>
 		inline void
 		aggregate_function(
-			function* func,
+			Function* func,
 			const char* name,
 			int narguments,
 			encoding enc = encoding::utf8,

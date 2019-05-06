@@ -165,25 +165,25 @@ namespace sqlite {
 				value.data(),
 				value.size(),
 				SQLITE_TRANSIENT,
-				encoding::utf8
+				downcast(encoding::utf8)
 			));
 		}
 
 		template <class Alloc>
 		inline void
-		bind(int index, const basic_u16string<Alloc>& value) {
+		bind(int index, const basic_u16string<Alloc>& value, encoding enc=encoding::utf16) {
 			call(::sqlite3_bind_text64(
 				this->_stmt,
 				index,
 				reinterpret_cast<const char*>(value.data()),
 				value.size()*sizeof(char16_t),
 				SQLITE_TRANSIENT,
-				encoding::utf16
+				downcast(enc)
 			));
 		}
 
 		inline void
-		bind(int index, const any& value) {
+		bind(int index, any_base value) {
 			call(::sqlite3_bind_value(this->_stmt, index, value.get()));
 		}
 
