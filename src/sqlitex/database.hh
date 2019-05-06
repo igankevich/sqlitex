@@ -4,7 +4,10 @@
 #include <chrono>
 #include <functional>
 
+#include <sqlitex/blob_stream.hh>
 #include <sqlitex/call.hh>
+#include <sqlitex/collation.hh>
+#include <sqlitex/column_metadata.hh>
 #include <sqlitex/forward.hh>
 #include <sqlitex/function.hh>
 #include <sqlitex/mutex.hh>
@@ -20,12 +23,32 @@ namespace sqlite {
 			std::function<permission(action,const char*,const char*,const char*,const char*)>;
 		using tracer_type = std::function<int(trace,void*,void*)>;
 		using progress_type = std::function<int()>;
+		using collation_generator_type =
+			std::function<void(static_database,encoding,u8string)>;
+
+	public:
+		enum class status: int {
+			lookaside_used=SQLITE_DBSTATUS_LOOKASIDE_USED,
+			cache_used=SQLITE_DBSTATUS_CACHE_USED,
+			schema_used=SQLITE_DBSTATUS_SCHEMA_USED,
+			statement_used=SQLITE_DBSTATUS_STMT_USED,
+			lookaside_hit=SQLITE_DBSTATUS_LOOKASIDE_HIT,
+			lookaside_miss_size=SQLITE_DBSTATUS_LOOKASIDE_MISS_SIZE,
+			lookaside_miss_full=SQLITE_DBSTATUS_LOOKASIDE_MISS_FULL,
+			cache_hit=SQLITE_DBSTATUS_CACHE_HIT,
+			cache_miss=SQLITE_DBSTATUS_CACHE_MISS,
+			cache_write=SQLITE_DBSTATUS_CACHE_WRITE,
+			deferred_fks=SQLITE_DBSTATUS_DEFERRED_FKS,
+			cache_used_shared=SQLITE_DBSTATUS_CACHE_USED_SHARED,
+		};
+		struct statistic { int current; int highwater; };
 
 	private:
 		types::database* _db = nullptr;
 		authorizer_type _authorizer;
 		tracer_type _tracer;
 		progress_type _progress;
+		collation_generator_type _collation_generator;
 
 	public:
 
@@ -474,6 +497,104 @@ namespace sqlite {
 			));
 		}
 
+		template <class Collation>
+		inline void
+		collation(const u8string& name, Collation coll) {
+			using string = typename Collation::string;
+			using const_pointer = const typename string::value_type*;
+			Collation* copy = new Collation(coll);
+			int ret = ::sqlite3_create_collation_v2(
+				this->_db, name.data(), downcast(Collation::encoding()), copy,
+				[] (void* ptr, int n1, const void* s1, int n2, const void* s2) -> int {
+					string str1(static_cast<const_pointer>(s1), n1);
+					string str2(static_cast<const_pointer>(s2), n2);
+					return (*static_cast<Collation*>(ptr))(str1, str2);
+				},
+				bits::destroy<Collation>
+			);
+			if (ret != SQLITE_OK) { bits::destroy<Collation>(copy); }
+			call(ret);
+		}
+
+		inline void
+		remove_collation(const u8string& name, encoding enc=encoding::utf8) {
+			call(::sqlite3_create_collation_v2(
+				this->_db,
+				name.data(),
+				downcast(enc),
+				nullptr,
+				nullptr,
+				nullptr
+			));
+		}
+
+		inline void collation_generator(collation_generator_type cb);
+
+		inline void
+		collation_generator(std::nullptr_t) {
+			call(::sqlite3_collation_needed(this->_db, nullptr, nullptr));
+		}
+
+		inline void
+		finalize() {
+			types::statement* stmt;
+			while ((stmt = ::sqlite3_next_stmt(this->_db, nullptr))) {
+				::sqlite3_finalize(stmt);
+			}
+		}
+
+		inline column_metadata
+		table_column_metadata(u8string db, u8string table, u8string column) const {
+			char const* type = nullptr;
+			char const* collation = nullptr;
+			int nn = 0, pk = 0, autoinc = 0;
+			call(::sqlite3_table_column_metadata(
+				this->_db,
+				db.data(),
+				table.data(),
+				column.data(),
+				&type,
+				&collation,
+				&nn,
+				&pk,
+				&autoinc
+			));
+			column_metadata col;
+			col._type.reset(const_cast<char*>(type));
+			col._collation.reset(const_cast<char*>(collation));
+			col._notnull = nn;
+			col._primarykey = pk;
+			col._autoincrement = autoinc;
+			return col;
+		}
+
+		inline void
+		load_extension(const char* file, const char* entry_point) {
+			call(::sqlite3_load_extension(this->_db, file, entry_point, nullptr));
+		}
+
+		inline blob_stream
+		open_blob(u8string db, u8string table, u8string column, int64 rowid, int flags=0) {
+			types::blob* b = nullptr;
+			call(::sqlite3_blob_open(
+				this->_db,
+				db.data(),
+				table.data(),
+				column.data(),
+				rowid,
+				flags,
+				&b
+			));
+			return blob_stream(b);
+		}
+
+		inline statistic
+		get(status key, bool reset=false) {
+			statistic s;
+			call(::sqlite3_db_status(this->_db, int(key), &s.current, &s.highwater, reset));
+			return s;
+		}
+
 		inline errc
 		error_code() const {
 			return errc(::sqlite3_errcode(this->_db));
@@ -595,10 +716,26 @@ namespace sqlite {
 		return static_database(::sqlite3_context_db_handle(this->_ptr));
 	}
 
+	inline void
+	database::collation_generator(collation_generator_type cb) {
+		this->_collation_generator = cb;
+		call(::sqlite3_collation_needed(
+			this->_db, this,
+			[] (void* ptr, types::database* db, int enc, const char* name) {
+				static_cast<database*>(ptr)->_collation_generator(
+					static_database(db),
+					encoding(enc),
+					name
+				);
+			}
+		));
+	}
+
 	inline void init() { call(::sqlite3_initialize()); }
 	inline void shutdown() { call(::sqlite3_shutdown()); }
 	inline void os_init() { call(::sqlite3_os_init()); }
 	inline void os_shutdown() { call(::sqlite3_os_end()); }
+	inline void shared_cache(bool b) { call(::sqlite3_enable_shared_cache(b)); }
 
 }
 

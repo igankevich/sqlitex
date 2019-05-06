@@ -23,7 +23,7 @@ sqlite::rstream::dump(std::ostream& out) {
 }
 
 sqlite::static_database sqlite::rstream::database() {
-	return static_database(::sqlite3_db_handle(this->_stmt));
+	return static_database(::sqlite3_db_handle(this->_ptr));
 }
 
 #endif // vim:filetype=cpp

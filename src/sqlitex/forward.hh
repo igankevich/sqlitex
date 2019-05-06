@@ -57,6 +57,8 @@ namespace sqlite {
 	class backup;
 	class random_device;
 	class any;
+	class blob_stream;
+	class column_metadata;
 	template <class T> class allocator;
 	class static_database;
 	class uri;
@@ -80,6 +82,8 @@ namespace sqlite {
 
 	template <class T>
 	using unique_ptr = std::unique_ptr<T,sqlite_deleter>;
+
+	enum class errc: int;
 
 	enum class limit {
 		length=SQLITE_LIMIT_LENGTH,
@@ -184,6 +188,7 @@ namespace sqlite {
 		utf16 = SQLITE_UTF16,
 		utf16be = SQLITE_UTF16BE,
 		utf16le = SQLITE_UTF16LE,
+		utf16_aligned = SQLITE_UTF16_ALIGNED,
 	};
 
 	template <encoding enc> struct encoding_traits;
@@ -234,6 +239,14 @@ namespace sqlite {
 	format(const char* format, const Args& ... args) {
 		return unique_ptr<char>(::sqlite3_mprintf(format, args...));
 	}
+
+	template <class ... Args>
+	inline void
+	log(errc code, const char* format, const Args& ... args) {
+		::sqlite3_log(code, format, args...);
+	}
+
+	struct statistic { int64 current; int64 highwater; };
 
 }
 
