@@ -15,6 +15,22 @@
 
 namespace sqlite {
 
+	template <class Iterator>
+	class iterator_view {
+
+	private:
+		Iterator _first, _last;
+
+	public:
+		inline
+		iterator_view(Iterator first, Iterator last):
+		_first(first), _last(last) {}
+
+		inline Iterator begin() { return this->_first; }
+		inline Iterator end() { return this->_last; }
+
+	};
+
 	class statement_counters {
 
 	private:
@@ -115,8 +131,14 @@ namespace sqlite {
 
 		statement(const statement&) = delete;
 		statement& operator=(const statement&) = delete;
-		statement(statement&&) = default;
-		statement& operator=(statement&&) = default;
+
+		inline statement(statement&& rhs): _ptr(rhs._ptr) { rhs._ptr = nullptr; }
+
+		inline statement&
+		operator=(statement&& rhs) {
+			std::swap(this->_ptr, rhs._ptr);
+			return *this;
+		}
 
 		inline
 		~statement() {
@@ -418,6 +440,9 @@ namespace sqlite {
 		template <class T> inline row_iterator<T> begin() { return row_iterator<T>(this); }
 		template <class T> inline row_iterator<T> end() { return row_iterator<T>(); }
 
+		template <class T>
+		inline iterator_view<row_iterator<T>> rows() { return {begin<T>(),end<T>()}; }
+
 	};
 
 	template <class T>
@@ -438,6 +463,11 @@ namespace sqlite {
 		value_type _value;
 
 	public:
+
+		inline explicit
+		row_iterator(statement& ptr): _ptr(&ptr) {
+			if (!this->_ptr->busy()) { advance(); }
+		}
 
 		inline explicit
 		row_iterator(statement* ptr): _ptr(ptr) {
@@ -478,7 +508,9 @@ namespace sqlite {
 
 		inline void
 		advance() {
-			if (this->_ptr->step() != errc::done) {
+			if (this->_ptr->step() == errc::done) {
+				this->_ptr = nullptr;
+			} else {
 				static_cast<const statement&>(*this->_ptr) >> this->_value;
 			}
 		}
@@ -493,12 +525,12 @@ namespace sqlite {
 	class cstream {
 
 	private:
-		statement& _statement;
+		const statement& _statement;
 		int _column = 0;
 
 	public:
 
-		inline explicit cstream(statement& rhs): _statement(rhs) {}
+		inline explicit cstream(const statement& rhs): _statement(rhs) {}
 
 		cstream() = delete;
 		cstream(const cstream&) = delete;

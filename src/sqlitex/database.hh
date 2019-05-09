@@ -43,12 +43,20 @@ namespace sqlite {
 	public:
 
 		inline explicit static_database(types::database* db): _ptr(db) {}
+		inline explicit static_database(types::context* ctx):
+		static_database(::sqlite3_context_db_handle(ctx)) {}
 
 		static_database() = default;
-		static_database(static_database&&) = default;
-		static_database& operator=(static_database&&) = default;
 		static_database(const static_database&) = default;
 		static_database& operator=(const static_database&) = default;
+
+		inline static_database(static_database&& rhs): _ptr(rhs._ptr) { rhs._ptr = nullptr; }
+
+		inline static_database&
+		operator=(static_database&& rhs) {
+			std::swap(this->_ptr, rhs._ptr);
+			return *this;
+		}
 
 		inline const types::database* get() const { return this->_ptr; }
 		inline types::database* get() { return this->_ptr; }
@@ -357,17 +365,17 @@ namespace sqlite {
 		inline int release_memory() { return ::sqlite3_db_release_memory(this->_ptr); }
 
 		inline void
-		foreign_keys(int enable) {
+		foreign_keys(bool enable) {
 			this->configure_int(SQLITE_DBCONFIG_ENABLE_FKEY, enable);
 		}
 
 		inline void
-		triggers(int enable) {
+		triggers(bool enable) {
 			this->configure_int(SQLITE_DBCONFIG_ENABLE_TRIGGER, enable);
 		}
 
 		inline void
-		full_text_search(int enable) {
+		full_text_search(bool enable) {
 			this->configure_int(SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER, enable);
 		}
 
@@ -911,17 +919,18 @@ namespace sqlite {
 		commit_hook_type _commit_hook;
 
 	public:
-		inline explicit database(types::database* db): static_database(db) {}
-
-		inline explicit
-		database(types::context* ctx):
-		static_database(::sqlite3_context_db_handle(ctx)) {}
-
 		inline ~database() { this->close(); }
-		database(database&&) = default;
-		database& operator=(database&&) = default;
+		database() = default;
 		database(const database&) = delete;
 		database& operator=(const database&) = delete;
+
+		inline database(database&& rhs): static_database(rhs._ptr) { rhs._ptr = nullptr; }
+
+		inline database&
+		operator=(database&& rhs) {
+			static_database::operator=(static_cast<static_database&&>(rhs));
+			return *this;
+		}
 
 		inline explicit
 		database(

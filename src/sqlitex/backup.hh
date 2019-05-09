@@ -9,7 +9,7 @@ namespace sqlite {
 	class backup {
 
 	private:
-		backup_type* _backup = nullptr;
+		types::backup* _backup = nullptr;
 		bool _done = false;
 
 	public:
@@ -22,9 +22,9 @@ namespace sqlite {
 			const char* destination_name = "main"
 		) {
 			this->_backup = ::sqlite3_backup_init(
-				destination.db(),
+				destination.get(),
 				destination_name,
-				source.db(),
+				source.get(),
 				source_name
 			);
 			if (!this->_backup) {
@@ -73,6 +73,9 @@ namespace sqlite {
 		total() const {
 			return ::sqlite3_backup_pagecount(this->_backup);
 		}
+
+		inline types::backup* get() { return this->_backup; }
+		inline const types::backup* get() const { return this->_backup; }
 
 	};
 
