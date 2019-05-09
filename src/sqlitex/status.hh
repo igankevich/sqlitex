@@ -1,7 +1,7 @@
 #ifndef SQLITEX_STATUS_HH
 #define SQLITEX_STATUS_HH
 
-#include <sqlitex/call.hh>
+#include <sqlitex/errc.hh>
 #include <sqlitex/forward.hh>
 
 namespace sqlite {

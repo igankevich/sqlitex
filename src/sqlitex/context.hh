@@ -89,7 +89,7 @@ namespace sqlite {
 
 		inline void
 		result(const blob& value) {
-			::sqlite3_result_blob64(this->_ptr, value.ptr(), value.size(), SQLITE_TRANSIENT);
+			::sqlite3_result_blob64(this->_ptr, value.get(), value.size(), SQLITE_TRANSIENT);
 		}
 
 		inline void

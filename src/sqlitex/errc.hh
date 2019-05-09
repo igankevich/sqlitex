@@ -120,17 +120,33 @@ namespace sqlite {
 		ok_load_permanently = SQLITE_OK_LOAD_PERMANENTLY,
 	};
 
+	class error_category: public std::error_category {
+	public:
+		const char* name() const noexcept override;
+		std::string message(int ev) const noexcept override;
+	};
+
+	extern error_category sqlite_category;
+
+	inline std::error_condition
+	make_error_condition(errc e) noexcept {
+		return std::error_condition(static_cast<int>(e), sqlite_category);
+	}
+
+	inline errc
+	call(int ret) {
+		if (ret != int(errc::ok)) { throw std::system_error(ret, sqlite_category); }
+		return errc(ret);
+	}
+
+	inline void
+	throw_error(errc err) {
+		throw std::system_error(int(err), sqlite_category);
+	}
+
 }
 
-namespace std {
-
-	template<>
-	struct is_error_condition_enum<sqlite::errc>: true_type {};
-
-	inline error_condition
-	make_error_condition(sqlite::errc e) noexcept;
-
-}
+namespace std { template<> struct is_error_condition_enum<sqlite::errc>: true_type {}; }
 
 
 #endif // vim:filetype=cpp

@@ -1,14 +1,15 @@
-#ifndef SQLITE_TYPES_HH
-#define SQLITE_TYPES_HH
+#ifndef SQLITEX_BLOB_HH
+#define SQLITEX_BLOB_HH
 
-#include <memory>
 #include <string>
 
 #include <sqlitex/forward.hh>
 
 namespace sqlite {
 
-	struct blob: public std::string {
+	class blob: public std::string {
+
+	public:
 
 		using std::string::string;
 
@@ -23,15 +24,8 @@ namespace sqlite {
 		blob(std::string&& rhs):
 		std::string(std::forward<std::string>(rhs)) {}
 
-		inline void*
-		ptr() {
-			return &this->std::string::operator[](0);
-		}
-
-		inline const void*
-		ptr() const {
-			return this->std::string::data();
-		}
+		inline void* get() { return &this->std::string::operator[](0); }
+		inline const void* get() const { return this->std::string::data(); }
 
 	};
 

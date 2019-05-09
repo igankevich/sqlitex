@@ -5,7 +5,7 @@ sqlite::to_string(locking_mode rhs) {
 	switch (rhs) {
 		case locking_mode::normal: return "NORMAL";
 		case locking_mode::exclusive: return "EXCLUSIVE";
-		default: return "UNKNOWN";
+		default: throw std::invalid_argument("bad locking mode");
 	}
 }
 
@@ -25,7 +25,7 @@ sqlite::to_string(journal_mode rhs) {
 		case journal_mode::memory: return "MEMORY";
 		case journal_mode::wal: return "WAL";
 		case journal_mode::none: return "OFF";
-		default: return "UNKNOWN";
+		default: throw std::invalid_argument("bad journal mode");
 	}
 }
 
@@ -38,4 +38,15 @@ sqlite::operator>>(const u8string& str, journal_mode& rhs) {
 	else if (str == "WAL") { rhs = journal_mode::wal; }
 	else if (str == "OFF") { rhs = journal_mode::none; }
 	else { throw std::invalid_argument("bad journal mode"); }
+}
+
+const char*
+sqlite::to_string(encoding rhs) {
+	switch (rhs) {
+		case encoding::utf8: return "UTF-8";
+		case encoding::utf16: return "UTF-16";
+		case encoding::utf16le: return "UTF-16le";
+		case encoding::utf16be: return "UTF-16be";
+		default: throw std::invalid_argument("bad encoding");
+	}
 }

@@ -1,7 +1,7 @@
 #ifndef SQLITEX_CONFIGURE_HH
 #define SQLITEX_CONFIGURE_HH
 
-#include <sqlitex/call.hh>
+#include <sqlitex/errc.hh>
 #include <sqlitex/forward.hh>
 
 namespace sqlite {

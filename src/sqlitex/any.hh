@@ -4,9 +4,9 @@
 #include <string>
 
 #include <sqlitex/allocator.hh>
+#include <sqlitex/blob.hh>
 #include <sqlitex/forward.hh>
 #include <sqlitex/named_ptr.hh>
-#include <sqlitex/types.hh>
 
 namespace sqlite {
 

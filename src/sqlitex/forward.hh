@@ -63,7 +63,7 @@ namespace sqlite {
 
 	class cstream;
 	class preupdate_database;
-	class rstream;
+	class statement;
 	class statement_counters;
 	class context;
 	class rstream_base;
@@ -79,11 +79,11 @@ namespace sqlite {
 	class blob_stream;
 	class column_metadata;
 	template <class T> class allocator;
+	template <class T> class row_iterator;
 	class static_database;
 	class uri;
 
 	using string = std::basic_string<char,std::char_traits<char>,allocator<char>>;
-
 	using u8string = std::string;
 	using u16string = std::u16string;
 	using int64 = types::int64;
@@ -237,6 +237,9 @@ namespace sqlite {
 		utf16le = SQLITE_UTF16LE,
 		utf16_aligned = SQLITE_UTF16_ALIGNED,
 	};
+
+	const char* to_string(encoding rhs);
+	void operator>>(const u8string& str, encoding& rhs);
 
 	template <encoding enc> struct encoding_traits;
 

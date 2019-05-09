@@ -5,14 +5,14 @@
 #include <functional>
 
 #include <sqlitex/blob_stream.hh>
-#include <sqlitex/call.hh>
+#include <sqlitex/errc.hh>
 #include <sqlitex/collation.hh>
 #include <sqlitex/column_metadata.hh>
 #include <sqlitex/forward.hh>
 #include <sqlitex/function.hh>
 #include <sqlitex/mutex.hh>
 #include <sqlitex/open.hh>
-#include <sqlitex/rstream.hh>
+#include <sqlitex/statement.hh>
 #include <sqlitex/snapshot.hh>
 #include <sqlitex/virtual_table.hh>
 
@@ -81,17 +81,17 @@ namespace sqlite {
 		}
 
 		template <class ... Args>
-		inline rstream
+		inline statement
 		prepare(const u8string& sql, const Args& ... args) {
 			types::statement* stmt = nullptr;
 			call(::sqlite3_prepare_v2(this->_ptr, sql.data(), sql.size(), &stmt, nullptr));
-			rstream rstr(stmt);
-			bind(rstr, 1, args...);
-			return rstr;
+			statement s(stmt);
+			bind(s, 1, args...);
+			return s;
 		}
 
 		template <class ... Args>
-		inline rstream
+		inline statement
 		prepare(const u8string& sql, const Args& ... args, prepare_f flags) {
 			types::statement* stmt = nullptr;
 			call(::sqlite3_prepare_v3(
@@ -102,13 +102,13 @@ namespace sqlite {
 				&stmt,
 				nullptr
 			));
-			rstream rstr(stmt);
-			bind(rstr, 1, args...);
-			return rstr;
+			statement s(stmt);
+			bind(s, 1, args...);
+			return s;
 		}
 
 		template <class ... Args>
-		inline rstream
+		inline statement
 		prepare(const u16string& sql, const Args& ... args) {
 			types::statement* stmt = nullptr;
 			call(::sqlite3_prepare16_v2(
@@ -118,13 +118,13 @@ namespace sqlite {
 				&stmt,
 				nullptr
 			));
-			rstream rstr(stmt);
-			bind(rstr, 1, args...);
-			return rstr;
+			statement s(stmt);
+			bind(s, 1, args...);
+			return s;
 		}
 
 		template <class ... Args>
-		inline rstream
+		inline statement
 		prepare(const u16string& sql, const Args& ... args, prepare_f flags) {
 			types::statement* stmt = nullptr;
 			call(::sqlite3_prepare16_v3(
@@ -135,17 +135,17 @@ namespace sqlite {
 				&stmt,
 				nullptr
 			));
-			rstream rstr(stmt);
-			bind(rstr, 1, args...);
-			return rstr;
+			statement s(stmt);
+			bind(s, 1, args...);
+			return s;
 		}
 
 		template <class ... Args>
 		inline void
 		execute(const u8string& sql, const Args& ... args) {
-			rstream&& rstr = this->prepare(sql, args...);
-			rstr.step();
-			rstr.close();
+			statement&& s = this->prepare(sql, args...);
+			s.step();
+			s.close();
 		}
 
 		inline void
@@ -199,10 +199,9 @@ namespace sqlite {
 		inline type \
 		field(const char* name="main") { \
 			type2 value{}; \
-			rstream rstr(prepare(format("PRAGMA %Q." #field, name).get())); \
-			cstream cstr(rstr); \
-			rstr >> cstr; \
-			cstr >> value; \
+			statement s(prepare(format("PRAGMA %Q." #field, name).get())); \
+			s.step(); \
+			s.column(0, value); \
 			return static_cast<type>(value); \
 		} \
 		inline void \
@@ -215,10 +214,9 @@ namespace sqlite {
 		field(const char* name="main") { \
 			type value{}; \
 			u8string str; \
-			rstream rstr(prepare(format("PRAGMA %Q." #field, name).get())); \
-			cstream cstr(rstr); \
-			rstr >> cstr; \
-			cstr >> str; \
+			statement s(prepare(format("PRAGMA %Q." #field, name).get())); \
+			s.step(); \
+			s.column(0, str); \
 			str >> value; \
 			return value; \
 		} \
@@ -237,7 +235,7 @@ namespace sqlite {
 		SQLITEX_PRAGMA(cell_size_check, bool, int, "%d");
 		SQLITEX_PRAGMA(checkpoint_fullfsync, bool, int, "%d");
 		SQLITEX_PRAGMA(defer_foreign_keys, bool, int, "%d");
-		SQLITEX_PRAGMA(encoding, u8string, u8string, "%s");
+		SQLITEX_PRAGMA_STRING(encoding, ::sqlite::encoding);
 		SQLITEX_PRAGMA_STRING(journal_mode, ::sqlite::journal_mode);
 		SQLITEX_PRAGMA(fullfsync, bool, int, "%d");
 		SQLITEX_PRAGMA(ignore_check_constraints, bool, int, "%d");
@@ -259,27 +257,27 @@ namespace sqlite {
 		#undef SQLITEX_PRAGMA
 		#undef SQLITEX_PRAGMA_STRING
 
-		inline rstream collations() { return prepare("PRAGMA collation_list"); }
-		inline rstream compile_options() { return prepare("PRAGMA compile_options"); }
-		inline rstream attached_databases() { return prepare("PRAGMA database_list"); }
-		inline rstream check_foreign_keys() { return prepare("PRAGMA foreign_key_check"); }
+		inline statement collations() { return prepare("PRAGMA collation_list"); }
+		inline statement compile_options() { return prepare("PRAGMA compile_options"); }
+		inline statement attached_databases() { return prepare("PRAGMA database_list"); }
+		inline statement check_foreign_keys() { return prepare("PRAGMA foreign_key_check"); }
 
-		inline rstream
+		inline statement
 		check_foreign_keys(const char* table) {
 			return prepare(format("PRAGMA foreign_key_check(%Q)", table).get());
 		}
 
-		inline rstream
+		inline statement
 		check_integrity(int max_errors=100) {
 			return prepare(format("PRAGMA integrity_check(%d)", max_errors).get());
 		}
 
-		inline rstream
+		inline statement
 		check_integrity_fast(int max_errors=100) {
 			return prepare(format("PRAGMA quick_check(%d)", max_errors).get());
 		}
 
-		inline rstream
+		inline statement
 		foreign_keys(const char* table) {
 			return prepare(format("PRAGMA foreign_key_list(%Q)", table).get());
 		}
@@ -287,44 +285,41 @@ namespace sqlite {
 		inline int64
 		data_version() {
 			std::int64_t value = 0;
-			rstream rstr(prepare("PRAGMA data_version"));
-			cstream cstr(rstr);
-			rstr >> cstr;
-			cstr >> value;
+			statement s(prepare("PRAGMA data_version"));
+			s.step();
+			s.column(0, value);
 			return value;
 		}
 
 		inline int
 		num_unused_pages(const char* name="main") {
 			int value = 0;
-			rstream rstr(prepare(format("PRAGMA %Q.freelist_count", name).get()));
-			cstream cstr(rstr);
-			rstr >> cstr;
-			cstr >> value;
+			statement s(prepare(format("PRAGMA %Q.freelist_count", name).get()));
+			s.step();
+			s.column(0, value);
 			return value;
 		}
 
 		inline int
 		num_pages(const char* name="main") {
 			int value = 0;
-			rstream rstr(prepare(format("PRAGMA %Q.page_count", name).get()));
-			cstream cstr(rstr);
-			rstr >> cstr;
-			cstr >> value;
+			statement s(prepare(format("PRAGMA %Q.page_count", name).get()));
+			s.step();
+			s.column(0, value);
 			return value;
 		}
 
-		inline rstream
+		inline statement
 		index(const char* name, const char* schema="main") {
 			return prepare(format("PRAGMA %Q.index_info(%Q)", schema, name).get());
 		}
 
-		inline rstream
+		inline statement
 		indices(const char* table, const char* schema="main") {
 			return prepare(format("PRAGMA %Q.index_list(%Q)", schema, table).get());
 		}
 
-		inline rstream
+		inline statement
 		index_columns(const char* name, const char* schema="main") {
 			return prepare(format("PRAGMA %Q.index_xinfo(%Q)", schema, name).get());
 		}
@@ -334,12 +329,12 @@ namespace sqlite {
 			execute(format("PRAGMA %Q.optimize(%x)", schema, mask).get());
 		}
 
-		inline rstream
+		inline statement
 		table_columns(const char* table, const char* schema) {
 			return prepare(format("PRAGMA %Q.table_info(%Q)", schema, table).get());
 		}
 
-		inline rstream
+		inline statement
 		table_columns_all(const char* table, const char* schema) {
 			return prepare(format("PRAGMA %Q.table_xinfo(%Q)", schema, table).get());
 		}
@@ -1135,6 +1130,9 @@ namespace sqlite {
 	inline void os_init() { call(::sqlite3_os_init()); }
 	inline void os_shutdown() { call(::sqlite3_os_end()); }
 	inline void shared_cache(bool b) { call(::sqlite3_enable_shared_cache(b)); }
+	inline void load(types::entry_point ptr) { call(::sqlite3_auto_extension(ptr)); }
+	inline void unload(types::entry_point ptr) { call(::sqlite3_cancel_auto_extension(ptr)); }
+	inline void unload_all() { ::sqlite3_reset_auto_extension(); }
 
 }
 

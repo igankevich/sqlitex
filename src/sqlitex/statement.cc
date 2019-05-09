@@ -1,14 +1,10 @@
-#ifndef VTESTBED_SQLITE_RSTREAM_CC
-#define VTESTBED_SQLITE_RSTREAM_CC
-
-
 #include <ostream>
 
 #include <sqlitex/database.hh>
-#include <sqlitex/rstream.hh>
+#include <sqlitex/statement.hh>
 
 void
-sqlite::rstream::dump(std::ostream& out) {
+sqlite::statement::dump(std::ostream& out) {
 	out << this->sql() << std::endl;
 	const int n = this->num_parameters();
 	for (int i=1; i<=n; ++i) {
@@ -22,8 +18,6 @@ sqlite::rstream::dump(std::ostream& out) {
 	}
 }
 
-sqlite::static_database sqlite::rstream::database() {
+sqlite::static_database sqlite::statement::database() {
 	return static_database(::sqlite3_db_handle(this->_ptr));
 }
-
-#endif // vim:filetype=cpp

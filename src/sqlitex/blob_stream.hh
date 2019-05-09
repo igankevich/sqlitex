@@ -1,7 +1,7 @@
 #ifndef SQLITEX_BLOB_STREAM_HH
 #define SQLITEX_BLOB_STREAM_HH
 
-#include <sqlitex/call.hh>
+#include <sqlitex/errc.hh>
 #include <sqlitex/forward.hh>
 
 namespace sqlite {
