@@ -9,8 +9,6 @@
 
 #include <sqlite3.h>
 
-#include <sqlitex/config.hh>
-
 namespace sqlite {
 
 	namespace types {
