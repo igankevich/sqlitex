@@ -280,58 +280,55 @@
 * Pragmas
 
 
-- [ ] EXCLUSIVE locking mode
-- [ ] application_id
-- [ ] auto_vacuum
-- [ ] automatic_index
-- [ ] busy_timeout
-- [ ] cache_size
-- [ ] cache_spill
-- [ ] case_sensitive_like
-- [ ] cell_size_check
-- [ ] checkpoint_fullfsync
-- [ ] collation_list
-- [ ] compile_options
-- [ ] data_version
-- [ ] database_list
-- [ ] defer_foreign_keys
-- [ ] encoding
-- [ ] exclusive locking mode
-- [ ] foreign_key_check
-- [ ] foreign_key_list
-- [ ] foreign_keys
-- [ ] freelist_count
-- [ ] fullfsync
-- [ ] ignore_check_constraints
-- [ ] incremental_vacuum
-- [ ] index_info
-- [ ] index_list
-- [ ] index_xinfo
-- [ ] integrity_check
-- [ ] journal_mode
-- [ ] journal_size_limit
-- [ ] legacy_alter_table
-- [ ] legacy_file_format
-- [ ] locking_mode
-- [ ] max_page_count
-- [ ] mmap_size
-- [ ] optimize
-- [ ] page_count
-- [ ] page_size
-- [ ] persistent journal mode
-- [ ] query_only
-- [ ] quick_check
-- [ ] read_uncommitted
-- [ ] recursive_triggers
-- [ ] reverse_unordered_selects
-- [ ] secure_delete
-- [ ] shrink_memory
-- [ ] soft_heap_limit
-- [ ] synchronous
-- [ ] table_info
-- [ ] table_xinfo
-- [ ] temp_store
-- [ ] threads
-- [ ] user_version
-- [ ] wal_autocheckpoint
-- [ ] wal_checkpoint
+- [X] application_id
+- [X] auto_vacuum
+- [X] automatic_index
+- [X] busy_timeout (we use C API)
+- [X] cache_size
+- [X] cache_spill
+- [X] case_sensitive_like
+- [X] cell_size_check
+- [X] checkpoint_fullfsync
+- [X] collation_list
+- [X] compile_options
+- [X] data_version
+- [X] database_list
+- [X] defer_foreign_keys
+- [X] encoding
+- [X] foreign_key_check
+- [X] foreign_key_list
+- [X] foreign_keys (via dbconfig)
+- [X] freelist_count
+- [X] fullfsync
+- [X] ignore_check_constraints
+- [X] incremental_vacuum
+- [X] index_info
+- [X] index_list
+- [X] index_xinfo
+- [X] integrity_check
+- [X] journal_mode
+- [X] journal_size_limit
+- [X] legacy_alter_table
+- [X] legacy_file_format
+- [X] locking_mode
+- [X] max_page_count
+- [X] mmap_size
+- [X] optimize
+- [X] page_count
+- [X] page_size
+- [X] query_only
+- [X] quick_check
+- [X] read_uncommitted
+- [X] recursive_triggers
+- [X] reverse_unordered_selects
+- [X] secure_delete
+- [X] shrink_memory (via C API)
+- [X] soft_heap_limit (via C API)
+- [X] synchronous
+- [X] table_info
+- [X] table_xinfo
+- [X] temp_store
+- [X] threads (via C API)
+- [X] user_version
+- [X] wal_autocheckpoint (via C API)
+- [X] wal_checkpoint (via C API)

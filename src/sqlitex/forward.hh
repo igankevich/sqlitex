@@ -98,7 +98,7 @@ namespace sqlite {
 	using basic_u16string = std::basic_string<char16_t,std::char_traits<char16_t>,Alloc>;
 
 	struct sqlite_deleter {
-		inline void operator()(void* ptr) { ::sqlite3_free(ptr); }
+		inline void operator()(const void* ptr) { ::sqlite3_free(const_cast<void*>(ptr)); }
 	};
 
 	template <class T>
@@ -309,6 +309,20 @@ namespace sqlite {
 		select_id=SQLITE_SCANSTAT_SELECTID,
 	};
 
+	enum class auto_vacuum: int {none=0, full=1, incremental=2};
+
+	enum class locking_mode { normal, exclusive };
+	const char* to_string(locking_mode rhs);
+	void operator>>(const u8string& str, locking_mode& rhs);
+
+	enum class journal_mode { del, truncate, persist, memory, wal, none };
+	const char* to_string(journal_mode rhs);
+	void operator>>(const u8string& str, journal_mode& rhs);
+
+	enum class sync_mode: int {none=0, normal=1, full=2, extra=3};
+
+	enum class temp_store_mode: int {def=0, file=1, memory=2};
+
 	template <class T>
 	inline auto
 	downcast(T value) -> typename std::enable_if<
@@ -343,9 +357,9 @@ namespace sqlite {
 	#endif
 
 	template <class ... Args>
-	inline unique_ptr<char>
+	inline unique_ptr<const char>
 	format(const char* format, const Args& ... args) {
-		return unique_ptr<char>(::sqlite3_mprintf(format, args...));
+		return unique_ptr<const char>(::sqlite3_mprintf(format, args...));
 	}
 
 	template <class ... Args>

@@ -191,37 +191,157 @@ namespace sqlite {
 		inline void vacuum() { this->execute("VACUUM"); }
 
 		inline void
-		user_version(int64_t version, const char* name="main") {
-			std::string sql;
-			sql += "PRAGMA ";
-			sql += name;
-			sql += ".user_version=";
-			sql += std::to_string(version);
-			this->execute(sql);
+		incremental_vacuum(int npages=0) {
+			execute(format("PRAGMA foreign_key_check(%d)", npages).get());
 		}
 
-		inline int64_t
-		user_version() {
-			int64_t version = 0;
-			rstream rstr{this->prepare("PRAGMA user_version")};
-			cstream cstr(rstr);
-			rstr >> cstr;
-			cstr >> version;
-			return version;
+		#define SQLITEX_PRAGMA(field, type, type2, fmt) \
+		inline type \
+		field(const char* name="main") { \
+			type2 value{}; \
+			rstream rstr(prepare(format("PRAGMA %Q." #field, name).get())); \
+			cstream cstr(rstr); \
+			rstr >> cstr; \
+			cstr >> value; \
+			return static_cast<type>(value); \
+		} \
+		inline void \
+		field(type rhs, const char* name="main") { \
+			execute(format("PRAGMA %Q." #field "=" fmt, name, type2(rhs)).get()); \
 		}
 
-		inline int64_t
-		user_version(const char* name) {
-			std::string sql;
-			sql += "PRAGMA ";
-			sql += name;
-			sql += ".user_version";
-			int64_t version = 0;
-			rstream rstr{this->prepare(sql.data())};
+		#define SQLITEX_PRAGMA_STRING(field, type) \
+		inline type \
+		field(const char* name="main") { \
+			type value{}; \
+			u8string str; \
+			rstream rstr(prepare(format("PRAGMA %Q." #field, name).get())); \
+			cstream cstr(rstr); \
+			rstr >> cstr; \
+			cstr >> str; \
+			str >> value; \
+			return value; \
+		} \
+		inline void \
+		field(type rhs, const char* name="main") { \
+			execute(format("PRAGMA %Q." #field "=%d", name, to_string(rhs)).get()); \
+		}
+
+		SQLITEX_PRAGMA(application_id, std::int32_t, std::int32_t, "%d");
+		SQLITEX_PRAGMA(user_version, std::int64_t, std::int64_t, "%d");
+		SQLITEX_PRAGMA(auto_vacuum, ::sqlite::auto_vacuum, int, "%d");
+		SQLITEX_PRAGMA(automatic_index, bool, int, "%d");
+		SQLITEX_PRAGMA(cache_size, int, int, "%d");
+		SQLITEX_PRAGMA(cache_spill, int, int, "%d");
+		SQLITEX_PRAGMA(case_sensitive_like, bool, int, "%d");
+		SQLITEX_PRAGMA(cell_size_check, bool, int, "%d");
+		SQLITEX_PRAGMA(checkpoint_fullfsync, bool, int, "%d");
+		SQLITEX_PRAGMA(defer_foreign_keys, bool, int, "%d");
+		SQLITEX_PRAGMA(encoding, u8string, u8string, "%s");
+		SQLITEX_PRAGMA_STRING(journal_mode, ::sqlite::journal_mode);
+		SQLITEX_PRAGMA(fullfsync, bool, int, "%d");
+		SQLITEX_PRAGMA(ignore_check_constraints, bool, int, "%d");
+		SQLITEX_PRAGMA(journal_size_limit, int, int, "%d");
+		SQLITEX_PRAGMA(legacy_alter_table, bool, int, "%d");
+		SQLITEX_PRAGMA(legacy_file_format, bool, int, "%d");
+		SQLITEX_PRAGMA_STRING(locking_mode, ::sqlite::locking_mode);
+		SQLITEX_PRAGMA(max_page_count, int, int, "%d");
+		SQLITEX_PRAGMA(mmap_size, int, int, "%d");
+		SQLITEX_PRAGMA(page_size, int, int, "%d");
+		SQLITEX_PRAGMA(query_only, bool, int, "%d");
+		SQLITEX_PRAGMA(read_uncommitted, bool, int, "%d");
+		SQLITEX_PRAGMA(recursive_triggers, bool, int, "%d");
+		SQLITEX_PRAGMA(reverse_unordered_selects, bool, int, "%d");
+		SQLITEX_PRAGMA(secure_delete, bool, int, "%d");
+		SQLITEX_PRAGMA(synchronous, sync_mode, int, "%d");
+		SQLITEX_PRAGMA(temp_store, temp_store_mode, int, "%d");
+
+		#undef SQLITEX_PRAGMA
+		#undef SQLITEX_PRAGMA_STRING
+
+		inline rstream collations() { return prepare("PRAGMA collation_list"); }
+		inline rstream compile_options() { return prepare("PRAGMA compile_options"); }
+		inline rstream attached_databases() { return prepare("PRAGMA database_list"); }
+		inline rstream check_foreign_keys() { return prepare("PRAGMA foreign_key_check"); }
+
+		inline rstream
+		check_foreign_keys(const char* table) {
+			return prepare(format("PRAGMA foreign_key_check(%Q)", table).get());
+		}
+
+		inline rstream
+		check_integrity(int max_errors=100) {
+			return prepare(format("PRAGMA integrity_check(%d)", max_errors).get());
+		}
+
+		inline rstream
+		check_integrity_fast(int max_errors=100) {
+			return prepare(format("PRAGMA quick_check(%d)", max_errors).get());
+		}
+
+		inline rstream
+		foreign_keys(const char* table) {
+			return prepare(format("PRAGMA foreign_key_list(%Q)", table).get());
+		}
+
+		inline int64
+		data_version() {
+			std::int64_t value = 0;
+			rstream rstr(prepare("PRAGMA data_version"));
 			cstream cstr(rstr);
 			rstr >> cstr;
-			cstr >> version;
-			return version;
+			cstr >> value;
+			return value;
+		}
+
+		inline int
+		num_unused_pages(const char* name="main") {
+			int value = 0;
+			rstream rstr(prepare(format("PRAGMA %Q.freelist_count", name).get()));
+			cstream cstr(rstr);
+			rstr >> cstr;
+			cstr >> value;
+			return value;
+		}
+
+		inline int
+		num_pages(const char* name="main") {
+			int value = 0;
+			rstream rstr(prepare(format("PRAGMA %Q.page_count", name).get()));
+			cstream cstr(rstr);
+			rstr >> cstr;
+			cstr >> value;
+			return value;
+		}
+
+		inline rstream
+		index(const char* name, const char* schema="main") {
+			return prepare(format("PRAGMA %Q.index_info(%Q)", schema, name).get());
+		}
+
+		inline rstream
+		indices(const char* table, const char* schema="main") {
+			return prepare(format("PRAGMA %Q.index_list(%Q)", schema, table).get());
+		}
+
+		inline rstream
+		index_columns(const char* name, const char* schema="main") {
+			return prepare(format("PRAGMA %Q.index_xinfo(%Q)", schema, name).get());
+		}
+
+		inline void
+		optimize(uint64 mask=0xfffe,const char* schema="main") {
+			execute(format("PRAGMA %Q.optimize(%x)", schema, mask).get());
+		}
+
+		inline rstream
+		table_columns(const char* table, const char* schema) {
+			return prepare(format("PRAGMA %Q.table_info(%Q)", schema, table).get());
+		}
+
+		inline rstream
+		table_columns_all(const char* table, const char* schema) {
+			return prepare(format("PRAGMA %Q.table_xinfo(%Q)", schema, table).get());
 		}
 
 		template <class Rep, class Period>
@@ -317,7 +437,7 @@ namespace sqlite {
 			Function func,
 			const char* name,
 			int narguments,
-			encoding enc = encoding::utf8,
+			::sqlite::encoding enc = ::sqlite::encoding::utf8,
 			bool deterministic = true
 		) {
 			int flags = static_cast<int>(enc);
@@ -341,7 +461,7 @@ namespace sqlite {
 			Function* func,
 			const char* name,
 			int narguments,
-			encoding enc = encoding::utf8,
+			::sqlite::encoding enc = ::sqlite::encoding::utf8,
 			bool deterministic = true
 		) {
 			int flags = static_cast<int>(enc);
@@ -364,7 +484,7 @@ namespace sqlite {
 			Function* func,
 			const char* name,
 			int narguments,
-			encoding enc = encoding::utf8,
+			::sqlite::encoding enc = ::sqlite::encoding::utf8,
 			bool deterministic = true
 		) {
 			int flags = static_cast<int>(enc);
@@ -392,7 +512,7 @@ namespace sqlite {
 			types::scalar_function func,
 			const char* name,
 			int narguments,
-			encoding enc = encoding::utf8,
+			::sqlite::encoding enc = ::sqlite::encoding::utf8,
 			bool deterministic = true,
 			void* ptr = nullptr
 		) {
@@ -412,7 +532,11 @@ namespace sqlite {
 		}
 
 		inline void
-		remove_function(const char* name, int narguments, encoding enc=encoding::utf8) {
+		remove_function(
+			const char* name,
+			int narguments,
+			::sqlite::encoding enc=::sqlite::encoding::utf8
+		) {
 			int flags = static_cast<int>(enc);
 			call(::sqlite3_create_function_v2(
 				this->_ptr,
@@ -447,7 +571,10 @@ namespace sqlite {
 		}
 
 		inline void
-		remove_collation(const u8string& name, encoding enc=encoding::utf8) {
+		remove_collation(
+			const u8string& name,
+			::sqlite::encoding enc=::sqlite::encoding::utf8
+		) {
 			call(::sqlite3_create_collation_v2(
 				this->_ptr,
 				name.data(),
@@ -778,7 +905,7 @@ namespace sqlite {
 		using tracer_type = std::function<int(trace,void*,void*)>;
 		using progress_type = std::function<int()>;
 		using collation_generator_type =
-			std::function<void(static_database,encoding,u8string)>;
+			std::function<void(static_database,::sqlite::encoding,u8string)>;
 		using commit_hook_type = std::function<int(static_database,const char*,int)>;
 
 	private:
@@ -919,7 +1046,7 @@ namespace sqlite {
 				[] (void* ptr, types::database* db, int enc, const char* name) {
 					static_cast<database*>(ptr)->_collation_generator(
 						static_database(db),
-						encoding(enc),
+						::sqlite::encoding(enc),
 						name
 					);
 				}

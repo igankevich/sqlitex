@@ -168,9 +168,7 @@ namespace sqlite {
 		inline void
 		step() {
 			errc ret = errc(::sqlite3_step(this->_ptr));
-			if (ret == errc::row) {
-				return;
-			}
+			if (ret == errc::row) { return; }
 			if (ret == errc::done) {
 				this->setstate(eofbit);
 			} else {

@@ -65,19 +65,19 @@ namespace sqlite {
 
 	};
 
-	template <> int
+	template <> inline int
 	any_cast<int>(const any& value) { return ::sqlite3_value_int(value._ptr); }
 
-	template <> types::int64
+	template <> inline types::int64
 	any_cast<types::int64>(const any& value) { return ::sqlite3_value_int64(value._ptr); }
 
-	template <> float
+	template <> inline float
 	any_cast<float>(const any& value) { return ::sqlite3_value_double(value._ptr); }
 
-	template <> double
+	template <> inline double
 	any_cast<double>(const any& value) { return ::sqlite3_value_double(value._ptr); }
 
-	template <> string
+	template <> inline string
 	any_cast<string>(const any& value) {
 		auto ptr = ::sqlite3_value_text(value._ptr);
 		string result;
@@ -85,7 +85,7 @@ namespace sqlite {
 		return result;
 	}
 
-	template <> u8string
+	template <> inline u8string
 	any_cast<u8string,encoding::utf8>(const any& value) {
 		auto ptr = ::sqlite3_value_text(value._ptr);
 		u8string result;
@@ -93,12 +93,12 @@ namespace sqlite {
 		return result;
 	}
 
-	template <> u8string
+	template <> inline u8string
 	any_cast<u8string>(const any& value) {
 		return any_cast<u8string,encoding::utf8>(value);
 	}
 
-	template <> u16string
+	template <> inline u16string
 	any_cast<u16string,encoding::utf16>(const any& value) {
 		auto ptr = ::sqlite3_value_text16(value._ptr);
 		u16string result;
@@ -106,7 +106,7 @@ namespace sqlite {
 		return result;
 	}
 
-	template <> u16string
+	template <> inline u16string
 	any_cast<u16string,encoding::utf16le>(const any& value) {
 		auto ptr = ::sqlite3_value_text16le(value._ptr);
 		u16string result;
@@ -114,7 +114,7 @@ namespace sqlite {
 		return result;
 	}
 
-	template <> u16string
+	template <> inline u16string
 	any_cast<u16string,encoding::utf16be>(const any& value) {
 		auto ptr = ::sqlite3_value_text16be(value._ptr);
 		u16string result;
@@ -122,12 +122,12 @@ namespace sqlite {
 		return result;
 	}
 
-	template <> u16string
+	template <> inline u16string
 	any_cast<u16string>(const any& value) {
 		return any_cast<u16string,encoding::utf16>(value);
 	}
 
-	template <> blob
+	template <> inline blob
 	any_cast<blob>(const any& value) {
 		auto ptr = ::sqlite3_value_blob(value._ptr);
 		blob result;

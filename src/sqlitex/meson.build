@@ -1,6 +1,7 @@
 sqlite_src = files([
 	'error_category.cc',
 	'rstream.cc',
+	'database.cc',
 ])
 sqlite_deps = [sqlite3]
 sqlite_name = 'sqlitex'
@@ -30,7 +31,6 @@ install_headers(
 		'errc.hh',
 		'error_category.hh',
 		'ext.hh',
-		'open.hh',
 		'rstream.hh',
 		'rstream_base.hh',
 		'transaction.hh',
