@@ -17,6 +17,66 @@
 
 namespace sqlite {
 
+
+	class statement_counters {
+
+	private:
+		types::statement* _ptr = nullptr;
+
+	public:
+
+		inline explicit statement_counters(types::statement* ptr): _ptr(ptr) {}
+		inline void reset() { ::sqlite3_stmt_scanstatus_reset(this->_ptr); }
+
+		inline void
+		get(int i, scan_status s, void* out) const {
+			call(::sqlite3_stmt_scanstatus(this->_ptr, i, downcast(s), out));
+		}
+
+		inline int
+		nloop(int i) const {
+			int64 result = 0;
+			this->get(i, scan_status::nloop, &result);
+			return result;
+		}
+
+		inline int
+		nvisit(int i) const {
+			int64 result = 0;
+			this->get(i, scan_status::nvisit, &result);
+			return result;
+		}
+
+		inline double
+		estimate(int i) const {
+			double result = 0;
+			this->get(i, scan_status::estimate, &result);
+			return result;
+		}
+
+		inline const char*
+		name(int i) const {
+			const char* result = 0;
+			this->get(i, scan_status::name, &result);
+			return result;
+		}
+
+		inline const char*
+		explain(int i) const {
+			const char* result = 0;
+			this->get(i, scan_status::explain, &result);
+			return result;
+		}
+
+		inline int
+		select_id(int i) const {
+			int result = 0;
+			this->get(i, scan_status::select_id, &result);
+			return result;
+		}
+
+	};
+
 	/**
 	\brief Stream of rows.
 	\date 2018-10-08
@@ -121,7 +181,8 @@ namespace sqlite {
 
 		inline int num_columns() const { return ::sqlite3_column_count(this->_ptr); }
 		inline void reset() { call(::sqlite3_reset(this->_ptr)); }
-		inline void reset_counters() { ::sqlite3_stmt_scanstatus_reset(this->_ptr); }
+
+		inline statement_counters counters() { return statement_counters(this->_ptr); }
 
 		inline int
 		get(status key, bool reset=false) {

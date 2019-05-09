@@ -13,18 +13,12 @@
 #include <sqlitex/mutex.hh>
 #include <sqlitex/open.hh>
 #include <sqlitex/rstream.hh>
+#include <sqlitex/snapshot.hh>
+#include <sqlitex/virtual_table.hh>
 
 namespace sqlite {
 
-	class database {
-
-	public:
-		using authorizer_type =
-			std::function<permission(action,const char*,const char*,const char*,const char*)>;
-		using tracer_type = std::function<int(trace,void*,void*)>;
-		using progress_type = std::function<int()>;
-		using collation_generator_type =
-			std::function<void(static_database,encoding,u8string)>;
+	class static_database {
 
 	public:
 		enum class status: int {
@@ -43,123 +37,54 @@ namespace sqlite {
 		};
 		struct statistic { int current; int highwater; };
 
-	private:
-		types::database* _db = nullptr;
-		authorizer_type _authorizer;
-		tracer_type _tracer;
-		progress_type _progress;
-		collation_generator_type _collation_generator;
+	protected:
+		types::database* _ptr = nullptr;
 
 	public:
 
-		database() = default;
+		inline explicit static_database(types::database* db): _ptr(db) {}
 
-		inline explicit
-		database(
-			const char* filename,
-			open_flag flags = open_flag::read_write | open_flag::create
-		) {
-			this->open(filename, flags);
-		}
+		static_database() = default;
+		static_database(static_database&&) = default;
+		static_database& operator=(static_database&&) = default;
+		static_database(const static_database&) = default;
+		static_database& operator=(const static_database&) = default;
 
-		inline ~database() { this->close(); }
+		inline const types::database* get() const { return this->_ptr; }
+		inline types::database* get() { return this->_ptr; }
 
-		inline
-		database(database&& rhs):
-		_db(rhs._db) {
-			rhs._db = nullptr;
-		}
-
-		inline database&
-		operator=(database&& rhs) {
-			this->swap(rhs);
-			return *this;
-		}
-
-		database(const database&) = delete;
-		database& operator=(const database&) = delete;
-
-		inline void
-		open(
-			const char* filename=":memory:",
-			open_flag flags = open_flag::read_write | open_flag::create,
-			const char* vfs_name=nullptr
-		) {
-			this->close();
-			call(::sqlite3_open_v2(filename, &this->_db, int(flags), vfs_name));
-		}
-
-		inline void
-		open(const u8string& filename) {
-			this->close();
-			call(::sqlite3_open(filename.data(), &this->_db));
-		}
-
-		inline void
-		open(const u16string& filename) {
-			this->close();
-			call(::sqlite3_open16(filename.data(), &this->_db));
-		}
-
-		/**
-		\brief Executes pragmas and closes database connection.
-		\date 2018-10-08
-		\author Ivan Gankevich
-		\details
-		\see \link https://www.sqlite.org/pragma.html#pragma_optimize\endlink
-		\arg Executes <code>PRAGMA optimize</code>.
-		*/
-		inline void
-		close() {
-			if (this->_db) {
-				this->do_execute("PRAGMA optimize");
-				call(::sqlite3_close(this->_db));
-				this->_db = nullptr;
-			}
-		}
-
-		inline void
-		close_async() {
-			if (this->_db) {
-				call(::sqlite3_close_v2(this->_db));
-				this->_db = nullptr;
-			}
-		}
-
-		inline void flush() { call(::sqlite3_db_cacheflush(this->_db)); }
-		inline const types::database* db() const { return this->_db; }
-		inline types::database* db() { return this->_db; }
+		inline void flush() { call(::sqlite3_db_cacheflush(this->_ptr)); }
 
 		inline const char*
 		filename(const char* name="main") const {
-			return ::sqlite3_db_filename(this->_db, name);
+			return ::sqlite3_db_filename(this->_ptr, name);
 		}
 
 		inline bool
 		read_only(const char* name="main") const {
-			return ::sqlite3_db_readonly(this->_db, name) != 0;
+			return ::sqlite3_db_readonly(this->_ptr, name) != 0;
 		}
 
 		inline void*
 		commit_hook(types::commit_hook rhs, void* ptr=nullptr) {
-			return ::sqlite3_commit_hook(this->_db, rhs, ptr);
+			return ::sqlite3_commit_hook(this->_ptr, rhs, ptr);
 		}
 
 		inline void*
 		rollback_hook(types::rollback_hook rhs, void* ptr=nullptr) {
-			return ::sqlite3_rollback_hook(this->_db, rhs, ptr);
+			return ::sqlite3_rollback_hook(this->_ptr, rhs, ptr);
 		}
 
 		inline void*
 		update_hook(types::update_hook rhs, void* ptr=nullptr) {
-			return ::sqlite3_update_hook(this->_db, rhs, ptr);
+			return ::sqlite3_update_hook(this->_ptr, rhs, ptr);
 		}
 
 		template <class ... Args>
 		inline rstream
 		prepare(const u8string& sql, const Args& ... args) {
 			types::statement* stmt = nullptr;
-			call(::sqlite3_prepare_v2(this->_db, sql.data(), sql.size(), &stmt, nullptr));
+			call(::sqlite3_prepare_v2(this->_ptr, sql.data(), sql.size(), &stmt, nullptr));
 			rstream rstr(stmt);
 			bind(rstr, 1, args...);
 			return rstr;
@@ -170,7 +95,7 @@ namespace sqlite {
 		prepare(const u8string& sql, const Args& ... args, prepare_f flags) {
 			types::statement* stmt = nullptr;
 			call(::sqlite3_prepare_v3(
-				this->_db,
+				this->_ptr,
 				sql.data(),
 				sql.size(),
 				downcast(flags),
@@ -187,7 +112,7 @@ namespace sqlite {
 		prepare(const u16string& sql, const Args& ... args) {
 			types::statement* stmt = nullptr;
 			call(::sqlite3_prepare16_v2(
-				this->_db,
+				this->_ptr,
 				sql.data(),
 				sql.size()*sizeof(char16_t),
 				&stmt,
@@ -203,7 +128,7 @@ namespace sqlite {
 		prepare(const u16string& sql, const Args& ... args, prepare_f flags) {
 			types::statement* stmt = nullptr;
 			call(::sqlite3_prepare16_v3(
-				this->_db,
+				this->_ptr,
 				sql.data(),
 				sql.size()*sizeof(char16_t),
 				downcast(flags),
@@ -224,28 +149,33 @@ namespace sqlite {
 		}
 
 		inline void
-		execute(const std::string& sql) {
+		execute(const char* sql) {
 			call(this->do_execute(sql));
+		}
+
+		inline void
+		execute(const u8string& sql) {
+			call(this->do_execute(sql.data()));
 		}
 
 		inline int
 		num_rows_modified() const noexcept {
-			return ::sqlite3_changes(this->_db);
+			return ::sqlite3_changes(this->_ptr);
 		}
 
 		inline int
 		total_rows_modified() const noexcept {
-			return ::sqlite3_total_changes(this->_db);
+			return ::sqlite3_total_changes(this->_ptr);
 		}
 
 		inline int64_t
 		last_insert_row_id() const noexcept {
-			return ::sqlite3_last_insert_rowid(this->_db);
+			return ::sqlite3_last_insert_rowid(this->_ptr);
 		}
 
 		inline void
 		last_insert_row_id(int64_t rhs) noexcept {
-			::sqlite3_set_last_insert_rowid(this->_db, rhs);
+			::sqlite3_set_last_insert_rowid(this->_ptr, rhs);
 		}
 
 		inline void
@@ -299,17 +229,17 @@ namespace sqlite {
 		busy_timeout(const std::chrono::duration<Rep,Period>& dur) {
 			using namespace std::chrono;
 			call(::sqlite3_busy_timeout(
-				this->_db,
+				this->_ptr,
 				duration_cast<milliseconds>(dur).count()
 			));
 		}
 
 		inline void
 		busy_handler(types::busy_handler handler, void* data) {
-			call(::sqlite3_busy_handler(this->_db, handler, data));
+			call(::sqlite3_busy_handler(this->_ptr, handler, data));
 		}
 
-		inline int release_memory() { return ::sqlite3_db_release_memory(this->_db); }
+		inline int release_memory() { return ::sqlite3_db_release_memory(this->_ptr); }
 
 		inline void
 		foreign_keys(int enable) {
@@ -333,7 +263,7 @@ namespace sqlite {
 
 		inline void
 		sql_extensions(int enable) {
-			call(::sqlite3_enable_load_extension(this->_db, enable));
+			call(::sqlite3_enable_load_extension(this->_ptr, enable));
 		}
 
 		inline void
@@ -353,27 +283,27 @@ namespace sqlite {
 
 		inline void
 		extended_error_codes(int enable) {
-			call(::sqlite3_extended_result_codes(this->_db, enable));
+			call(::sqlite3_extended_result_codes(this->_ptr, enable));
 		}
 
 		inline void
 		lookaside(size_t slot_size, size_t nslots, void* buffer=nullptr) {
 			call(::sqlite3_db_config(
-				this->_db, SQLITE_DBCONFIG_LOOKASIDE,
+				this->_ptr, SQLITE_DBCONFIG_LOOKASIDE,
 				buffer, slot_size, nslots
 			));
 		}
 
 		inline void
 		name(const char* name) {
-			call(::sqlite3_db_config(this->_db, SQLITE_DBCONFIG_MAINDBNAME, name));
+			call(::sqlite3_db_config(this->_ptr, SQLITE_DBCONFIG_MAINDBNAME, name));
 		}
 
-		inline void interrupt() { ::sqlite3_interrupt(this->_db); }
+		inline void interrupt() { ::sqlite3_interrupt(this->_ptr); }
 
 		inline bool
 		is_in_auto_commit_mode() {
-			return ::sqlite3_get_autocommit(this->_db) != 0;
+			return ::sqlite3_get_autocommit(this->_ptr) != 0;
 		}
 
 		inline bool
@@ -394,7 +324,7 @@ namespace sqlite {
 			Function* ptr = new Function(func);
 			if (deterministic) { flags |= SQLITE_DETERMINISTIC; }
 			call(::sqlite3_create_function_v2(
-				this->_db, name, narguments, flags, ptr,
+				this->_ptr, name, narguments, flags, ptr,
 				[] (types::context* ctx, int nargs, types::value** args) {
 					context c(ctx);
 					c.data<Function>()->func(&c, nargs, reinterpret_cast<any_base*>(args));
@@ -417,7 +347,7 @@ namespace sqlite {
 			int flags = static_cast<int>(enc);
 			if (deterministic) { flags |= SQLITE_DETERMINISTIC; }
 			call(::sqlite3_create_function_v2(
-				this->_db, name, narguments, flags, func,
+				this->_ptr, name, narguments, flags, func,
 				[] (types::context* ctx, int nargs, types::value** args) {
 					context c(ctx);
 					c.data<Function>()->func(&c, nargs, reinterpret_cast<any_base*>(args));
@@ -440,7 +370,7 @@ namespace sqlite {
 			int flags = static_cast<int>(enc);
 			if (deterministic) { flags |= SQLITE_DETERMINISTIC; }
 			call(::sqlite3_create_function_v2(
-				this->_db, name, narguments, flags, func,
+				this->_ptr, name, narguments, flags, func,
 				[] (types::context* ctx, int nargs, types::value** args) {
 					context c(ctx);
 					c.data<Function>()->func(c, nargs, reinterpret_cast<any_base*>(args));
@@ -469,7 +399,7 @@ namespace sqlite {
 			int flags = static_cast<int>(enc);
 			if (deterministic) { flags |= SQLITE_DETERMINISTIC; }
 			call(::sqlite3_create_function_v2(
-				this->_db,
+				this->_ptr,
 				name,
 				narguments,
 				flags,
@@ -485,7 +415,7 @@ namespace sqlite {
 		remove_function(const char* name, int narguments, encoding enc=encoding::utf8) {
 			int flags = static_cast<int>(enc);
 			call(::sqlite3_create_function_v2(
-				this->_db,
+				this->_ptr,
 				name,
 				narguments,
 				flags,
@@ -504,7 +434,7 @@ namespace sqlite {
 			using const_pointer = const typename string::value_type*;
 			Collation* copy = new Collation(coll);
 			int ret = ::sqlite3_create_collation_v2(
-				this->_db, name.data(), downcast(Collation::encoding()), copy,
+				this->_ptr, name.data(), downcast(Collation::encoding()), copy,
 				[] (void* ptr, int n1, const void* s1, int n2, const void* s2) -> int {
 					string str1(static_cast<const_pointer>(s1), n1);
 					string str2(static_cast<const_pointer>(s2), n2);
@@ -519,7 +449,7 @@ namespace sqlite {
 		inline void
 		remove_collation(const u8string& name, encoding enc=encoding::utf8) {
 			call(::sqlite3_create_collation_v2(
-				this->_db,
+				this->_ptr,
 				name.data(),
 				downcast(enc),
 				nullptr,
@@ -528,17 +458,10 @@ namespace sqlite {
 			));
 		}
 
-		inline void collation_generator(collation_generator_type cb);
-
-		inline void
-		collation_generator(std::nullptr_t) {
-			call(::sqlite3_collation_needed(this->_db, nullptr, nullptr));
-		}
-
 		inline void
 		finalize() {
 			types::statement* stmt;
-			while ((stmt = ::sqlite3_next_stmt(this->_db, nullptr))) {
+			while ((stmt = ::sqlite3_next_stmt(this->_ptr, nullptr))) {
 				::sqlite3_finalize(stmt);
 			}
 		}
@@ -549,7 +472,7 @@ namespace sqlite {
 			char const* collation = nullptr;
 			int nn = 0, pk = 0, autoinc = 0;
 			call(::sqlite3_table_column_metadata(
-				this->_db,
+				this->_ptr,
 				db.data(),
 				table.data(),
 				column.data(),
@@ -570,14 +493,14 @@ namespace sqlite {
 
 		inline void
 		load_extension(const char* file, const char* entry_point) {
-			call(::sqlite3_load_extension(this->_db, file, entry_point, nullptr));
+			call(::sqlite3_load_extension(this->_ptr, file, entry_point, nullptr));
 		}
 
 		inline blob_stream
 		open_blob(u8string db, u8string table, u8string column, int64 rowid, int flags=0) {
 			types::blob* b = nullptr;
 			call(::sqlite3_blob_open(
-				this->_db,
+				this->_ptr,
 				db.data(),
 				table.data(),
 				column.data(),
@@ -591,49 +514,365 @@ namespace sqlite {
 		inline statistic
 		get(status key, bool reset=false) {
 			statistic s;
-			call(::sqlite3_db_status(this->_db, int(key), &s.current, &s.highwater, reset));
+			call(::sqlite3_db_status(this->_ptr, int(key), &s.current, &s.highwater, reset));
 			return s;
 		}
 
 		inline errc
 		error_code() const {
-			return errc(::sqlite3_errcode(this->_db));
+			return errc(::sqlite3_errcode(this->_ptr));
 		}
 
 		inline errc
 		extended_error_code() const {
-			return errc(::sqlite3_extended_errcode(this->_db));
+			return errc(::sqlite3_extended_errcode(this->_ptr));
 		}
 
 		inline std::errc
 		system_error_code() const {
-			return std::errc(::sqlite3_system_errno(this->_db));
+			return std::errc(::sqlite3_system_errno(this->_ptr));
 		}
 
-		inline const char* error_message() const { return ::sqlite3_errmsg(this->_db); }
+		inline const char* error_message() const { return ::sqlite3_errmsg(this->_ptr); }
 
 		inline u16string
 		error_message_utf16() const {
-			return reinterpret_cast<const char16_t*>(::sqlite3_errmsg16(this->_db));
+			return reinterpret_cast<const char16_t*>(::sqlite3_errmsg16(this->_ptr));
 		}
 
 		inline static_mutex
 		mutex() const {
-			return static_mutex(::sqlite3_db_mutex(this->_db));
+			return static_mutex(::sqlite3_db_mutex(this->_ptr));
 		}
 
 		inline int
 		limit(::sqlite::limit key, int value) {
-			return ::sqlite3_limit(this->_db, int(key), value);
+			return ::sqlite3_limit(this->_ptr, int(key), value);
 		}
 
 		inline int limit(::sqlite::limit key) { return this->limit(key, -1); }
 
 		inline void
+		unlock_notify(types::unlock_notify cb, void* ptr=nullptr) {
+			call(::sqlite3_unlock_notify(this->_ptr, cb, ptr));
+		}
+
+		inline void
+		checkpoint_after(int nframes) {
+			call(::sqlite3_wal_autocheckpoint(this->_ptr, nframes));
+		}
+
+		inline void
+		checkpoint(const char* name=nullptr) {
+			call(::sqlite3_wal_checkpoint(this->_ptr, name));
+		}
+
+		inline checkpoint_result
+		checkpoint(const char* name=nullptr, checkpoint_mode mode=checkpoint_mode::passive) {
+			checkpoint_result result{};
+			call(::sqlite3_wal_checkpoint_v2(
+				this->_ptr,
+				name,
+				downcast(mode),
+				&result.nframes,
+				&result.ncheckpointed
+			));
+			return result;
+		}
+
+		inline void
+		declare_virtual_table(const char* sql) {
+			call(::sqlite3_declare_vtab(this->_ptr, sql));
+		}
+
+		template <class Table, class Cursor>
+		inline void virtual_table(const char* module_name) {
+			types::module m{};
+			m.iVersion = 2;
+			m.xCreate = [] (
+				types::database* db,
+				void*,
+				int argc,
+				const char *const* argv,
+				types::virtual_table** ptr,
+				char**
+			) -> int {
+				try {
+					Table::create(static_database(db), argc, argv);
+					*ptr = reinterpret_cast<types::virtual_table*>(
+						new Table(static_database(db), argc, argv)
+					);
+				} catch (const std::bad_alloc& err) {
+					return SQLITE_NOMEM;
+				}
+				return SQLITE_OK;
+			};
+			m.xConnect = [] (
+				types::database* db,
+				void*,
+				int argc,
+				const char *const* argv,
+				types::virtual_table** ptr,
+				char**
+			) -> int {
+				try {
+					*ptr = reinterpret_cast<types::virtual_table*>(
+						new Table(static_database(db), argc, argv)
+					);
+				} catch (const std::bad_alloc& err) {
+					return SQLITE_NOMEM;
+				}
+				return SQLITE_OK;
+			};
+			m.xBestIndex = [] (types::virtual_table* ptr, types::index_info* idx) -> int {
+				return reinterpret_cast<::sqlite::virtual_table*>(ptr)->best_index(
+					static_cast<virtual_table_index*>(idx)
+				);
+			};
+			m.xOpen = [] (
+				types::virtual_table* ptr,
+				types::virtual_table_cursor** cursor
+			) -> int {
+				try {
+					*cursor = reinterpret_cast<types::virtual_table_cursor*>(
+						new Cursor(reinterpret_cast<Table*>(ptr))
+					);
+				} catch (const std::bad_alloc& err) {
+					return SQLITE_NOMEM;
+				}
+				return SQLITE_OK;
+			};
+			#define SQLITEX_CURSOR_FIELD(field,method) \
+				m.field = [] (types::virtual_table_cursor* ptr) -> int { \
+					return reinterpret_cast<Cursor*>(ptr)->method(); \
+				}
+			SQLITEX_CURSOR_FIELD(xClose, close);
+			m.xFilter = [] (
+				types::virtual_table_cursor* ptr,
+				int idxNum,
+				const char* idxStr,
+				int argc,
+				types::value** argv
+			) -> int {
+				return reinterpret_cast<Cursor*>(ptr)->filter(
+					idxNum, idxStr, argc, reinterpret_cast<any_base*>(argv)
+				);
+			};
+			SQLITEX_CURSOR_FIELD(xNext, next);
+			SQLITEX_CURSOR_FIELD(xEof, eof);
+			m.xColumn = [] (
+				types::virtual_table_cursor* ptr,
+				types::context* ctx,
+				int n
+			) -> int {
+				virtual_table_context c(ctx);
+				return reinterpret_cast<Cursor*>(ptr)->column(&c, n);
+			};
+			m.xRowid = [] (
+				types::virtual_table_cursor* ptr,
+				int64* rowid
+			) -> int {
+				return reinterpret_cast<Cursor*>(ptr)->rowid(*rowid);
+			};
+			#undef SQLITEX_CURSOR_FIELD
+			#define SQLITEX_TABLE_FIELD(field,method) \
+				m.field = [] (types::virtual_table* ptr) -> int { \
+					return reinterpret_cast<Table*>(ptr)->method(); \
+				}
+			SQLITEX_TABLE_FIELD(xDisconnect, disconnect);
+			SQLITEX_TABLE_FIELD(xDestroy, destroy);
+			SQLITEX_TABLE_FIELD(xBegin, begin);
+			SQLITEX_TABLE_FIELD(xSync, sync);
+			SQLITEX_TABLE_FIELD(xCommit, commit);
+			SQLITEX_TABLE_FIELD(xRollback, rollback);
+			m.xRename = [] (types::virtual_table* ptr, const char* name) -> int {
+				return reinterpret_cast<Table*>(ptr)->name(name);
+			};
+			m.xSavepoint = [] (types::virtual_table* ptr, int n) -> int {
+				return reinterpret_cast<Table*>(ptr)->savepoint(n);
+			};
+			m.xRelease = [] (types::virtual_table* ptr, int n) -> int {
+				return reinterpret_cast<Table*>(ptr)->release(n);
+			};
+			m.xRollback = [] (types::virtual_table* ptr, int n) -> int {
+				return reinterpret_cast<Table*>(ptr)->rollback(n);
+			};
+			m.xUpdate = [] (
+				types::virtual_table* ptr,
+				int argc,
+				types::value** argv,
+				int64* rowid
+			) -> int {
+				return reinterpret_cast<Table*>(ptr)->update(
+					argc,
+					reinterpret_cast<any_base*>(argv),
+					*rowid
+				);
+			};
+			m.xFindFunction = [] (
+				types::virtual_table* ptr,
+				int nargs,
+				const char* name,
+				types::virtual_table_function* func,
+				void** user_data
+			) -> int {
+				return reinterpret_cast<Table*>(ptr)->find_function(
+					nargs,
+					name,
+					func,
+					user_data
+				);
+			};
+			#undef SQLITEX_TABLE_FIELD
+			call(::sqlite3_create_module_v2(this->_ptr, module_name, &m, nullptr, nullptr));
+		}
+
+		inline void
+		overload_function(const char* name, int nargs) {
+			call(::sqlite3_overload_function(this->_ptr, name, nargs));
+		}
+
+		template <class ... Args>
+		inline void configure(virtual_table::key key, Args ... args) {
+			call(::sqlite3_vtab_config(this->_ptr, int(key), args...));
+		}
+
+		inline void constraints(bool rhs) {
+			configure(virtual_table::key::constraint_support, rhs);
+		}
+
+		inline ::sqlite::conflict_policy
+		conflict_policy() {
+			return ::sqlite::conflict_policy(::sqlite3_vtab_on_conflict(this->_ptr));
+		}
+
+		inline void
+		file(const char* name, file_operation op, void* arg) {
+			call(::sqlite3_file_control(this->_ptr, name, downcast(op), arg));
+		}
+
+		inline void
+		file(file_operation op, void* arg) {
+			this->file(nullptr, op, arg);
+		}
+
+	private:
+
+		inline int
+		do_execute(const char* sql) {
+			return ::sqlite3_exec(this->_ptr, sql, nullptr, nullptr, nullptr);
+		}
+
+		inline void
+		configure_int(int key, int value) {
+			call(::sqlite3_db_config(this->_ptr, key, value, nullptr));
+		}
+
+	};
+
+	class database: public static_database {
+
+	public:
+		using authorizer_type =
+			std::function<permission(action,const char*,const char*,const char*,const char*)>;
+		using tracer_type = std::function<int(trace,void*,void*)>;
+		using progress_type = std::function<int()>;
+		using collation_generator_type =
+			std::function<void(static_database,encoding,u8string)>;
+		using commit_hook_type = std::function<int(static_database,const char*,int)>;
+
+	private:
+		authorizer_type _authorizer;
+		tracer_type _tracer;
+		progress_type _progress;
+		collation_generator_type _collation_generator;
+		commit_hook_type _commit_hook;
+
+	public:
+		inline explicit database(types::database* db): static_database(db) {}
+
+		inline explicit
+		database(types::context* ctx):
+		static_database(::sqlite3_context_db_handle(ctx)) {}
+
+		inline ~database() { this->close(); }
+		database(database&&) = default;
+		database& operator=(database&&) = default;
+		database(const database&) = delete;
+		database& operator=(const database&) = delete;
+
+		inline explicit
+		database(
+			const char* filename,
+			file_flag flags = file_flag::read_write | file_flag::create
+		) {
+			this->open(filename, flags);
+		}
+
+		inline void
+		open(
+			const char* filename=":memory:",
+			file_flag flags = file_flag::read_write | file_flag::create,
+			const char* vfs_name=nullptr
+		) {
+			this->close();
+			call(::sqlite3_open_v2(filename, &this->_ptr, int(flags), vfs_name));
+		}
+
+		inline void
+		open(const u8string& filename) {
+			this->close();
+			call(::sqlite3_open(filename.data(), &this->_ptr));
+		}
+
+		inline void
+		open(const u16string& filename) {
+			this->close();
+			call(::sqlite3_open16(filename.data(), &this->_ptr));
+		}
+
+		inline void
+		close() {
+			if (this->_ptr) {
+				call(::sqlite3_close(this->_ptr));
+				this->_ptr = nullptr;
+			}
+		}
+
+		inline void
+		close_async() {
+			if (this->_ptr) {
+				call(::sqlite3_close_v2(this->_ptr));
+				this->_ptr = nullptr;
+			}
+		}
+
+		inline void
+		recover(const char* name="main") {
+			call(::sqlite3_snapshot_recover(this->_ptr, name));
+		}
+
+		inline void
+		open(const char* schema, const snapshot& snap) {
+			call(::sqlite3_snapshot_open(
+				this->_ptr,
+				schema,
+				const_cast<types::snapshot*>(snap.get())
+			));
+		}
+
+		inline ::sqlite::snapshot
+		snapshot(const char* schema) {
+			types::snapshot* ptr = nullptr;
+			call(::sqlite3_snapshot_get(this->_ptr, schema, &ptr));
+			return ::sqlite::snapshot(ptr);
+		}
+
+		inline void
 		authorizer(authorizer_type cb) {
 			this->_authorizer = cb;
 			call(::sqlite3_set_authorizer(
-				this->_db,
+				this->_ptr,
 				[] (void* ptr, int a,
 					const char* a1, const char* a2, const char* a3, const char* a4
 				) -> int {
@@ -648,7 +887,7 @@ namespace sqlite {
 		tracer(tracer_type cb, trace mask=trace::all) {
 			this->_tracer = cb;
 			call(::sqlite3_trace_v2(
-				this->_db,
+				this->_ptr,
 				static_cast<unsigned>(mask),
 				[] (unsigned mask, void* ptr, void* a1, void* a2) -> int {
 					auto* db = static_cast<database*>(ptr);
@@ -662,7 +901,7 @@ namespace sqlite {
 		progress(progress_type cb, int ninstructions) {
 			this->_progress = cb;
 			::sqlite3_progress_handler(
-				this->_db,
+				this->_ptr,
 				ninstructions,
 				[] (void* ptr) -> int {
 					auto* db = static_cast<database*>(ptr);
@@ -673,62 +912,95 @@ namespace sqlite {
 		}
 
 		inline void
-		swap(database& rhs) {
-			std::swap(this->_db, rhs._db);
+		collation_generator(collation_generator_type cb) {
+			this->_collation_generator = cb;
+			call(::sqlite3_collation_needed(
+				this->_ptr, this,
+				[] (void* ptr, types::database* db, int enc, const char* name) {
+					static_cast<database*>(ptr)->_collation_generator(
+						static_database(db),
+						encoding(enc),
+						name
+					);
+				}
+			));
 		}
 
-	protected:
-		inline void reset() { this->_db = nullptr; }
-		inline explicit database(types::database* db): _db(db) {}
+		inline void
+		collation_generator(std::nullptr_t) {
+			call(::sqlite3_collation_needed(this->_ptr, nullptr, nullptr));
+		}
 
-	private:
-
-		inline int
-		do_execute(const std::string& sql) {
-			return ::sqlite3_exec(
-				this->_db,
-				sql.data(),
-				nullptr,
-				nullptr,
-				nullptr
+		inline void
+		on_commit(commit_hook_type cb) {
+			this->_commit_hook = cb;
+			::sqlite3_wal_hook(
+				this->_ptr,
+				[] (void* ptr, types::database*, const char* name, int npages) {
+					auto* db = static_cast<database*>(ptr);
+					return db->_commit_hook(*db, name, npages);
+				},
+				this
 			);
 		}
 
-		inline void configure_int(int key, int value) {
-			call(::sqlite3_db_config(this->_db, key, value, nullptr));
+		#if defined(SQLITE_ENABLE_PREUPDATE_HOOK)
+		template <class Update>
+		inline void
+		on_update(Update* ptr) {
+			call(::sqlite3_preupdate_hook(
+				get(),
+				[] (
+					void* ptr,
+					types::database* db,
+					int op,
+					char const* dbname,
+					char const* table,
+					sqlite3_int64 iKey1,
+					sqlite3_int64 iKey2
+				) {
+					preupdate_database db2(db);
+					(*reinterpret_cast<Update*>(ptr))(
+						&db,
+						action(op),
+						dbname,
+						table,
+						rowid1,
+						rowid2
+					);
+				},
+				ptr
+			));
+		}
+		#endif
+
+	};
+
+	#if defined(SQLITE_ENABLE_PREUPDATE_HOOK)
+	class preupdate_database: public static_database {
+
+	public:
+		using static_database::static_database;
+
+		inline int num_columns() { return ::sqlite3_preupdate_count(get()); }
+		inline int depth() { return ::sqlite3_preupdate_depth(get()); }
+
+		inline void
+		old_values(int n, any_base* values) {
+			call(::sqlite3_preupdate_old(get(), n, reinterpret_cast<types::value**>(values)));
+		}
+
+		inline void
+		new_values(int n, any_base* values) {
+			call(::sqlite3_preupdate_new(get(), n, reinterpret_cast<types::value**>(values)));
 		}
 
 	};
-
-	inline void swap(database& lhs, database& rhs) { lhs.swap(rhs); }
-
-	class static_database: public database {
-	public:
-		inline explicit static_database(types::database* db): database(db) {}
-		inline explicit static_database(types::context* ctx):
-		database(::sqlite3_context_db_handle(ctx)) {}
-		inline ~static_database() { this->reset(); }
-		static_database(static_database&&) = default;
-	};
+	#endif
 
 	inline static_database
 	context::database() {
 		return static_database(::sqlite3_context_db_handle(this->_ptr));
-	}
-
-	inline void
-	database::collation_generator(collation_generator_type cb) {
-		this->_collation_generator = cb;
-		call(::sqlite3_collation_needed(
-			this->_db, this,
-			[] (void* ptr, types::database* db, int enc, const char* name) {
-				static_cast<database*>(ptr)->_collation_generator(
-					static_database(db),
-					encoding(enc),
-					name
-				);
-			}
-		));
 	}
 
 	inline void init() { call(::sqlite3_initialize()); }

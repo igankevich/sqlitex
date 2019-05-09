@@ -1,4 +1,5 @@
 * API
+
 - [X] sqlite3_version
 - [X] sqlite3_libversion
 - [X] sqlite3_sourceid
@@ -179,19 +180,19 @@
 - [X] sqlite3_auto_extension
 - [X] sqlite3_cancel_auto_extension
 - [X] sqlite3_reset_auto_extension
-- [ ] sqlite3_create_module
-- [ ] sqlite3_create_module_v2
-- [ ] sqlite3_declare_vtab
-- [ ] sqlite3_overload_function
+- [X] sqlite3_create_module (legacy)
+- [X] sqlite3_create_module_v2
+- [X] sqlite3_declare_vtab
+- [X] sqlite3_overload_function
 - [X] sqlite3_blob_open
 - [X] sqlite3_blob_reopen
 - [X] sqlite3_blob_close
 - [X] sqlite3_blob_bytes
 - [X] sqlite3_blob_read
 - [X] sqlite3_blob_write
-- [ ] sqlite3_vfs_find
-- [ ] sqlite3_vfs_register
-- [ ] sqlite3_vfs_unregister
+- [X] sqlite3_vfs_find
+- [X] sqlite3_vfs_register
+- [X] sqlite3_vfs_unregister
 - [X] sqlite3_mutex_alloc
 - [X] sqlite3_mutex_free
 - [X] sqlite3_mutex_enter
@@ -200,8 +201,8 @@
 - [X] sqlite3_mutex_held
 - [X] sqlite3_mutex_notheld
 - [X] sqlite3_db_mutex
-- [ ] sqlite3_file_control
-- [ ] sqlite3_test_control
+- [X] sqlite3_file_control
+- [X] sqlite3_test_control (for testing)
 - [X] sqlite3_status (legacy)
 - [X] sqlite3_status64
 - [X] sqlite3_db_status
@@ -211,46 +212,46 @@
 - [X] sqlite3_backup_finish
 - [X] sqlite3_backup_remaining
 - [X] sqlite3_backup_pagecount
-- [ ] sqlite3_unlock_notify
-- [ ] sqlite3_stricmp
-- [ ] sqlite3_strnicmp
-- [ ] sqlite3_strglob
-- [ ] sqlite3_strlike
+- [X] sqlite3_unlock_notify
+- [X] sqlite3_stricmp
+- [X] sqlite3_strnicmp
+- [X] sqlite3_strglob
+- [X] sqlite3_strlike
 - [X] sqlite3_log
-- [ ] sqlite3_wal_hook
-- [ ] sqlite3_wal_autocheckpoint
-- [ ] sqlite3_wal_checkpoint
-- [ ] sqlite3_wal_checkpoint_v2
-- [ ] sqlite3_vtab_config
-- [ ] sqlite3_vtab_on_conflict
-- [ ] sqlite3_vtab_nochange
-- [ ] sqlite3_vtab_collation
-- [ ] sqlite3_stmt_scanstatus
+- [X] sqlite3_wal_hook
+- [X] sqlite3_wal_autocheckpoint
+- [X] sqlite3_wal_checkpoint
+- [X] sqlite3_wal_checkpoint_v2
+- [X] sqlite3_vtab_config
+- [X] sqlite3_vtab_on_conflict
+- [X] sqlite3_vtab_nochange
+- [X] sqlite3_vtab_collation
+- [X] sqlite3_stmt_scanstatus
 - [X] sqlite3_stmt_scanstatus_reset
 - [X] sqlite3_db_cacheflush
-- [ ] sqlite3_preupdate_hook
-- [ ] sqlite3_preupdate_old
-- [ ] sqlite3_preupdate_count
-- [ ] sqlite3_preupdate_depth
-- [ ] sqlite3_preupdate_new
+- [X] sqlite3_preupdate_hook
+- [X] sqlite3_preupdate_old
+- [X] sqlite3_preupdate_count
+- [X] sqlite3_preupdate_depth
+- [X] sqlite3_preupdate_new
 - [X] sqlite3_system_errno
-- [ ] sqlite3_snapshot_get
-- [ ] sqlite3_snapshot_open
-- [ ] sqlite3_snapshot_free
-- [ ] sqlite3_snapshot_cmp
-- [ ] sqlite3_snapshot_recover
+- [X] sqlite3_snapshot_get
+- [X] sqlite3_snapshot_open
+- [X] sqlite3_snapshot_free
+- [X] sqlite3_snapshot_cmp
+- [X] sqlite3_snapshot_recover
 - [ ] sqlite3_rtree_geometry_callback
 - [ ] sqlite3_rtree_query_callback
-- [ ] sqlite3session_create
-- [ ] sqlite3session_delete
-- [ ] sqlite3session_enable
-- [ ] sqlite3session_indirect
-- [ ] sqlite3session_attach
+- [X] sqlite3session_create
+- [X] sqlite3session_delete
+- [X] sqlite3session_enable
+- [X] sqlite3session_indirect
+- [X] sqlite3session_attach
 - [ ] sqlite3session_table_filter
 - [ ] sqlite3session_changeset
 - [ ] sqlite3session_diff
 - [ ] sqlite3session_patchset
-- [ ] sqlite3session_isempty
+- [X] sqlite3session_isempty
 - [ ] sqlite3changeset_start
 - [ ] sqlite3changeset_next
 - [ ] sqlite3changeset_op

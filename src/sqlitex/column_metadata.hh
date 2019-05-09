@@ -22,7 +22,7 @@ namespace sqlite {
 		inline bool primary_key() const { return this->_primarykey; }
 		inline bool auto_increment() const { return this->_autoincrement; }
 
-		friend class database;
+		friend class static_database;
 
 	};
 

@@ -42,6 +42,20 @@ namespace sqlite {
 		using page_cache = ::sqlite3_pcache;
 		using page = ::sqlite3_pcache_page;
 		using destructor = void (*)(void*);
+		using unlock_notify = void (*)(void **apArg, int nArg);
+		using snapshot = ::sqlite3_snapshot;
+		using virtual_table = ::sqlite3_vtab;
+		using module = ::sqlite3_module;
+		using virtual_table_cursor = ::sqlite3_vtab_cursor;
+		using index_info = ::sqlite3_index_info;
+		using virtual_table_function = void (*)(context*,int,value**);
+		using syscall_ptr = ::sqlite3_syscall_ptr;
+		using symbol = void(*)(void);
+		#if defined(SQLITE_ENABLE_SESSION)
+		using session = ::sqlite3_session;
+		using changeset_iterator = ::sqlite3_changeset_iter;
+		using changegroup = ::sqlite3_changegroup;
+		#endif
 
 	}
 
@@ -50,11 +64,18 @@ namespace sqlite {
 	}
 
 	class cstream;
+	class preupdate_database;
 	class rstream;
+	class statement_counters;
 	class context;
 	class rstream_base;
 	class database;
 	class backup;
+	class snapshot;
+	class virtual_table;
+	class virtual_table_cursor;
+	class virtual_table_context;
+	class virtual_table_index;
 	class random_device;
 	class any;
 	class blob_stream;
@@ -84,6 +105,34 @@ namespace sqlite {
 	using unique_ptr = std::unique_ptr<T,sqlite_deleter>;
 
 	enum class errc: int;
+
+	enum class file_flag: int {
+		read_only = SQLITE_OPEN_READONLY,
+		read_write = SQLITE_OPEN_READWRITE,
+		create = SQLITE_OPEN_CREATE,
+		no_mutex = SQLITE_OPEN_NOMUTEX,
+		full_mutex = SQLITE_OPEN_FULLMUTEX,
+		shared_cache = SQLITE_OPEN_SHAREDCACHE,
+		private_cache = SQLITE_OPEN_PRIVATECACHE,
+		uri = SQLITE_OPEN_URI,
+		delete_on_close=SQLITE_OPEN_DELETEONCLOSE,
+		exclusive=SQLITE_OPEN_EXCLUSIVE,
+		autoproxy=SQLITE_OPEN_AUTOPROXY,
+		memory=SQLITE_OPEN_MEMORY,
+		main_db=SQLITE_OPEN_MAIN_DB,
+		temp_db=SQLITE_OPEN_TEMP_DB,
+		transient_db=SQLITE_OPEN_TRANSIENT_DB,
+		main_journal=SQLITE_OPEN_MAIN_JOURNAL,
+		temp_journal=SQLITE_OPEN_TEMP_JOURNAL,
+		subjournal=SQLITE_OPEN_SUBJOURNAL,
+		master_journal=SQLITE_OPEN_MASTER_JOURNAL,
+		wal=SQLITE_OPEN_WAL,
+	};
+
+	inline file_flag
+	operator|(file_flag a, file_flag b) {
+		return file_flag(int(a) | int(b));
+	}
 
 	enum class limit {
 		length=SQLITE_LIMIT_LENGTH,
@@ -201,6 +250,65 @@ namespace sqlite {
 		using string = u16string;
 	};
 
+	enum class checkpoint_mode: int {
+		passive=SQLITE_CHECKPOINT_PASSIVE,
+		full=SQLITE_CHECKPOINT_FULL,
+		restart=SQLITE_CHECKPOINT_RESTART,
+		truncate=SQLITE_CHECKPOINT_TRUNCATE,
+	};
+
+	struct checkpoint_result { int nframes; int ncheckpointed; };
+
+	enum class conflict_policy: int {
+		rollback=SQLITE_ROLLBACK,
+		fail=SQLITE_FAIL,
+		replace=SQLITE_REPLACE,
+	};
+
+	enum class file_operation: int {
+		lockstate=SQLITE_FCNTL_LOCKSTATE,
+		get_lockproxyfile=SQLITE_FCNTL_GET_LOCKPROXYFILE,
+		set_lockproxyfile=SQLITE_FCNTL_SET_LOCKPROXYFILE,
+		last_errno=SQLITE_FCNTL_LAST_ERRNO,
+		size_hint=SQLITE_FCNTL_SIZE_HINT,
+		chunk_size=SQLITE_FCNTL_CHUNK_SIZE,
+		file_pointer=SQLITE_FCNTL_FILE_POINTER,
+		sync_omitted=SQLITE_FCNTL_SYNC_OMITTED,
+		win32_av_retry=SQLITE_FCNTL_WIN32_AV_RETRY,
+		persist_wal=SQLITE_FCNTL_PERSIST_WAL,
+		overwrite=SQLITE_FCNTL_OVERWRITE,
+		vfsname=SQLITE_FCNTL_VFSNAME,
+		powersafe_overwrite=SQLITE_FCNTL_POWERSAFE_OVERWRITE,
+		pragma=SQLITE_FCNTL_PRAGMA,
+		busyhandler=SQLITE_FCNTL_BUSYHANDLER,
+		tempfilename=SQLITE_FCNTL_TEMPFILENAME,
+		mmap_size=SQLITE_FCNTL_MMAP_SIZE,
+		trace=SQLITE_FCNTL_TRACE,
+		has_moved=SQLITE_FCNTL_HAS_MOVED,
+		sync=SQLITE_FCNTL_SYNC,
+		commit_phasetwo=SQLITE_FCNTL_COMMIT_PHASETWO,
+		win32_set_handle=SQLITE_FCNTL_WIN32_SET_HANDLE,
+		wal_block=SQLITE_FCNTL_WAL_BLOCK,
+		zipvfs=SQLITE_FCNTL_ZIPVFS,
+		rbu=SQLITE_FCNTL_RBU,
+		vfs_pointer=SQLITE_FCNTL_VFS_POINTER,
+		journal_pointer=SQLITE_FCNTL_JOURNAL_POINTER,
+		win32_get_handle=SQLITE_FCNTL_WIN32_GET_HANDLE,
+		pdb=SQLITE_FCNTL_PDB,
+		begin_atomic_write=SQLITE_FCNTL_BEGIN_ATOMIC_WRITE,
+		commit_atomic_write=SQLITE_FCNTL_COMMIT_ATOMIC_WRITE,
+		rollback_atomic_write=SQLITE_FCNTL_ROLLBACK_ATOMIC_WRITE,
+	};
+
+	enum class scan_status: int {
+		nloop=SQLITE_SCANSTAT_NLOOP,
+		nvisit=SQLITE_SCANSTAT_NVISIT,
+		estimate=SQLITE_SCANSTAT_EST,
+		name=SQLITE_SCANSTAT_NAME,
+		explain=SQLITE_SCANSTAT_EXPLAIN,
+		select_id=SQLITE_SCANSTAT_SELECTID,
+	};
+
 	template <class T>
 	inline auto
 	downcast(T value) -> typename std::enable_if<
@@ -247,6 +355,26 @@ namespace sqlite {
 	}
 
 	struct statistic { int64 current; int64 highwater; };
+
+	inline int
+	compare(const u8string& lhs, const u8string& rhs) {
+		return ::sqlite3_stricmp(lhs.data(), rhs.data());
+	}
+
+	inline int
+	compare(const u8string& lhs, const u8string& rhs, int length) {
+		return ::sqlite3_strnicmp(lhs.data(), rhs.data(), length);
+	}
+
+	inline bool
+	like(const u8string& lhs, const u8string& rhs, unsigned int escape=0) {
+		return ::sqlite3_strlike(lhs.data(), rhs.data(), escape) == 0;
+	}
+
+	inline bool
+	glob(const u8string& lhs, const u8string& rhs) {
+		return ::sqlite3_strglob(lhs.data(), rhs.data()) == 0;
+	}
 
 }
 
