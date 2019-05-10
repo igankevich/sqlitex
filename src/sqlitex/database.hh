@@ -4,7 +4,6 @@
 #include <chrono>
 #include <functional>
 
-#include <sqlitex/blob_stream.hh>
 #include <sqlitex/errc.hh>
 #include <sqlitex/collation.hh>
 #include <sqlitex/column_metadata.hh>
@@ -631,7 +630,7 @@ namespace sqlite {
 			call(::sqlite3_load_extension(this->_ptr, file, entry_point, nullptr));
 		}
 
-		inline blob_stream
+		inline blob_buffer
 		open_blob(u8string db, u8string table, u8string column, int64 rowid, int flags=0) {
 			types::blob* b = nullptr;
 			call(::sqlite3_blob_open(
@@ -643,7 +642,7 @@ namespace sqlite {
 				flags,
 				&b
 			));
-			return blob_stream(b);
+			return blob_buffer(b);
 		}
 
 		inline statistic

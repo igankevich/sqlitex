@@ -1,7 +1,8 @@
 sqlite_src = files([
+	'blob.cc',
+	'database.cc',
 	'errc.cc',
 	'statement.cc',
-	'database.cc',
 ])
 sqlite_deps = [sqlite3]
 sqlite_name = 'sqlitex'
@@ -30,7 +31,6 @@ install_headers(
 		'allocator.hh',
 		'any.hh',
 		'backup.hh',
-		'blob_stream.hh',
 		'blob.hh',
 		'collation.hh',
 		'column_metadata.hh',

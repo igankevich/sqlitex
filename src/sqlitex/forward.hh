@@ -76,7 +76,7 @@ namespace sqlite {
 	class virtual_table_index;
 	class random_device;
 	class any;
-	class blob_stream;
+	class blob_buffer;
 	class column_metadata;
 	template <class T> class allocator;
 	template <class T> class row_iterator;
