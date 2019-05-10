@@ -75,16 +75,20 @@ namespace sqlite {
 		inline bool not_held() { return ::sqlite3_mutex_held(this->_ptr) != 0; }
 		#endif
 
-		mutex(mutex&&) = default;
-		mutex& operator=(mutex&&) = default;
 		mutex(const mutex&) = delete;
 		mutex& operator=(const mutex&) = delete;
+
+		inline mutex(mutex&& rhs): _ptr(rhs._ptr) { rhs._ptr = nullptr; }
+		inline mutex& operator=(mutex&& rhs) { this->swap(rhs); return *this; }
+		inline void swap(mutex& rhs) { std::swap(this->_ptr, rhs._ptr); }
 
 	protected:
 		inline explicit mutex(types::mutex* ptr): _ptr(ptr) {}
 		inline void reset() { this->_ptr = nullptr; }
 
 	};
+
+	inline void swap(mutex& lhs, mutex& rhs) { lhs.swap(rhs); }
 
 	class recursive_mutex: public mutex {
 	public:

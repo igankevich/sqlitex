@@ -122,13 +122,12 @@ namespace sqlite {
 
 	public:
 
-		statement() = default;
-
 		inline explicit
 		statement(types::statement* stmt):
 		_ptr(stmt)
 		{}
 
+		statement() = default;
 		statement(const statement&) = delete;
 		statement& operator=(const statement&) = delete;
 
@@ -136,8 +135,13 @@ namespace sqlite {
 
 		inline statement&
 		operator=(statement&& rhs) {
-			std::swap(this->_ptr, rhs._ptr);
+			this->swap(rhs);
 			return *this;
+		}
+
+		inline void
+		swap(statement& rhs) {
+			std::swap(this->_ptr, rhs._ptr);
 		}
 
 		inline
@@ -444,6 +448,8 @@ namespace sqlite {
 		inline iterator_view<row_iterator<T>> rows() { return {begin<T>(),end<T>()}; }
 
 	};
+
+	inline void swap(statement& lhs, statement& rhs) { lhs.swap(rhs); }
 
 	template <class T>
 	class row_iterator {

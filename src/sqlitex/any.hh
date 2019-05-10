@@ -56,6 +56,9 @@ namespace sqlite {
 		any() = default;
 		inline explicit any(value_type* ptr): any_base(::sqlite3_value_dup(ptr)) {}
 		inline ~any() { ::sqlite3_value_free(this->_ptr); }
+		inline any(any&& rhs): any_base(rhs._ptr) { rhs._ptr = nullptr; }
+		inline any& operator=(any&& rhs) { this->swap(rhs); return *this; }
+		inline void swap(any& rhs) { std::swap(this->_ptr, rhs._ptr); }
 
 		inline any&
 		operator=(const any& rhs) {
@@ -63,7 +66,10 @@ namespace sqlite {
 			return *this;
 		}
 
+
 	};
+
+	inline void swap(any& lhs, any& rhs) { lhs.swap(rhs); }
 
 	template <> inline int
 	any_cast<int>(const any& value) { return ::sqlite3_value_int(value._ptr); }

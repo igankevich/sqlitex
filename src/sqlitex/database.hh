@@ -54,8 +54,13 @@ namespace sqlite {
 
 		inline static_database&
 		operator=(static_database&& rhs) {
-			std::swap(this->_ptr, rhs._ptr);
+			this->swap(rhs);
 			return *this;
+		}
+
+		inline void
+		swap(static_database& rhs) {
+			std::swap(this->_ptr, rhs._ptr);
 		}
 
 		inline const types::database* get() const { return this->_ptr; }
@@ -900,6 +905,8 @@ namespace sqlite {
 
 	};
 
+	inline void swap(static_database& lhs, static_database& rhs) { lhs.swap(rhs); }
+
 	class database: public static_database {
 
 	public:
@@ -923,14 +930,8 @@ namespace sqlite {
 		database() = default;
 		database(const database&) = delete;
 		database& operator=(const database&) = delete;
-
-		inline database(database&& rhs): static_database(rhs._ptr) { rhs._ptr = nullptr; }
-
-		inline database&
-		operator=(database&& rhs) {
-			static_database::operator=(static_cast<static_database&&>(rhs));
-			return *this;
-		}
+		database(database&&) = default;
+		database& operator=(database&& rhs) = default;
 
 		inline explicit
 		database(

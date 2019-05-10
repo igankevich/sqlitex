@@ -17,9 +17,25 @@ namespace sqlite {
 		inline explicit blob_stream(types::blob* ptr): _ptr(ptr) {}
 		inline ~blob_stream() { ::sqlite3_blob_close(this->_ptr); }
 		blob_stream(const blob_stream&) = delete;
-		blob_stream(blob_stream&&) = default;
 		blob_stream& operator=(const blob_stream&) = delete;
-		blob_stream& operator=(blob_stream&&) = default;
+
+		inline
+		blob_stream(blob_stream&& rhs):
+		_ptr(rhs._ptr), _offset(rhs._offset) {
+			rhs._ptr = nullptr;
+		}
+
+		inline blob_stream&
+		operator=(blob_stream&& rhs) {
+			this->swap(rhs);
+			return *this;
+		}
+
+		inline void
+		swap(blob_stream& rhs) {
+			std::swap(this->_ptr, rhs._ptr);
+			std::swap(this->_offset, rhs._offset);
+		}
 
 		inline int size() const { return ::sqlite3_blob_bytes(this->_ptr); }
 		inline void reopen(int64 rowid) { call(::sqlite3_blob_reopen(this->_ptr, rowid)); }
@@ -39,6 +55,8 @@ namespace sqlite {
 		friend class database;
 
 	};
+
+	inline void swap(blob_stream& lhs, blob_stream& rhs) { lhs.swap(rhs); }
 
 }
 

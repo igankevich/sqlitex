@@ -14,10 +14,12 @@ namespace sqlite {
 
 		inline explicit snapshot(types::snapshot* ptr): _ptr(ptr) {}
 		inline ~snapshot() { ::sqlite3_snapshot_free(this->_ptr); }
-		snapshot(snapshot&&) = default;
-		snapshot& operator=(snapshot&&) = default;
 		snapshot(const snapshot&) = delete;
 		snapshot& operator=(const snapshot&) = delete;
+
+		inline snapshot(snapshot&& rhs): _ptr(rhs._ptr) { rhs._ptr = nullptr; }
+		inline snapshot& operator=(snapshot&& rhs) { this->swap(rhs); return *this; }
+		inline void swap(snapshot& rhs) { std::swap(this->_ptr, rhs._ptr); }
 
 		inline types::snapshot* get() { return this->_ptr; }
 		inline const types::snapshot* get() const { return this->_ptr; }
@@ -28,6 +30,8 @@ namespace sqlite {
 		}
 
 	};
+
+	inline void swap(snapshot& lhs, snapshot& rhs) { lhs.swap(rhs); }
 
 	inline bool
 	operator==(const snapshot& lhs, const snapshot& rhs) {

@@ -17,8 +17,8 @@ namespace sqlite {
 		inline const char* name() const { return this->_name; }
 		named_ptr() = default;
 		named_ptr(const named_ptr&) = default;
-		named_ptr(named_ptr&&) = default;
 		named_ptr& operator=(const named_ptr&) = default;
+		named_ptr(named_ptr&&) = default;
 		named_ptr& operator=(named_ptr&&) = default;
 	};
 
