@@ -70,7 +70,7 @@ namespace sqlite {
 			call(::sqlite3_blob_read(this->_ptr, data, size, offset));
 		}
 
-		friend class database;
+		friend class connection;
 
 	};
 
@@ -101,15 +101,7 @@ namespace sqlite {
 		blob_streambuf() = default;
 		blob_streambuf(const blob_streambuf&) = delete;
 		blob_streambuf& operator=(const blob_streambuf&) = delete;
-
-		blob_streambuf(
-			database* db,
-			u8string dbname,
-			u8string table,
-			u8string column,
-			int64 rowid,
-			openmode mode
-		);
+		inline explicit blob_streambuf(blob_buffer&& rhs): _buffer(std::move(rhs)) {}
 
 	protected:
 		int_type overflow(int_type c) override;

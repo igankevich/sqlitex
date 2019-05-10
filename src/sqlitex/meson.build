@@ -1,6 +1,6 @@
 sqlite_src = files([
 	'blob.cc',
-	'database.cc',
+	'connection.cc',
 	'errc.cc',
 	'statement.cc',
 ])
@@ -36,7 +36,7 @@ install_headers(
 		'column_metadata.hh',
 		'configure.hh',
 		'context.hh',
-		'database.hh',
+		'connection.hh',
 		'errc.hh',
 		'forward.hh',
 		'function.hh',

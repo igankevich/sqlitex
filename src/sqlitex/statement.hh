@@ -5,6 +5,7 @@
 #include <iosfwd>
 #include <iterator>
 #include <string>
+#include <type_traits>
 
 #include <sqlitex/allocator.hh>
 #include <sqlitex/any.hh>
@@ -185,8 +186,8 @@ namespace sqlite {
 		}
 
 		inline const char*
-		parameter_name(int index) {
-			return ::sqlite3_bind_parameter_name(this->_ptr, index);
+		parameter_name(int i) {
+			return ::sqlite3_bind_parameter_name(this->_ptr, i);
 		}
 
 		inline int
@@ -194,55 +195,51 @@ namespace sqlite {
 			return ::sqlite3_bind_parameter_index(this->_ptr, name);
 		}
 
-		inline void
-		column(int index, float& value) const {
-			value = static_cast<float>(::sqlite3_column_double(this->_ptr, index));
+		template <class Float>
+		inline auto
+		column(int i, Float& value) const ->
+		typename std::enable_if<std::is_floating_point<Float>::value>::type {
+			value = static_cast<Float>(::sqlite3_column_double(this->_ptr, i));
 		}
 
-		inline void
-		column(int index, double& value) const {
-			value = ::sqlite3_column_double(this->_ptr, index);
+		template <class Integer>
+		inline auto
+		column(int i, Integer& value) const ->
+		typename std::enable_if<std::is_integral<Integer>::value &&
+		(sizeof(Integer) <= sizeof(int))>::type {
+			value = static_cast<Integer>(::sqlite3_column_int(this->_ptr, i));
 		}
 
-		#define SQLITEX_COLUMN(suffix, type) \
-			inline void \
-			column(int index, type& value) const { \
-				value = static_cast<type>(::sqlite3_column_##suffix(this->_ptr, index)); \
-			} \
-
-		SQLITEX_COLUMN(int, char);
-		SQLITEX_COLUMN(int, std::int8_t);
-		SQLITEX_COLUMN(int, std::int16_t);
-		SQLITEX_COLUMN(int, std::int32_t);
-		SQLITEX_COLUMN(int64, std::int64_t);
-		SQLITEX_COLUMN(int, std::uint8_t);
-		SQLITEX_COLUMN(int, std::uint16_t);
-		SQLITEX_COLUMN(int, std::uint32_t);
-		SQLITEX_COLUMN(int64, std::uint64_t);
-
-		#undef SQLITEX_COLUMN_INT
+		template <class Integer>
+		inline auto
+		column(int i, Integer& value) const ->
+		typename std::enable_if<std::is_integral<Integer>::value &&
+		(sizeof(Integer) > sizeof(int))>::type {
+			value = static_cast<Integer>(::sqlite3_column_int64(this->_ptr, i));
+		}
 
 		template <class Clock, class Duration>
 		inline void
 		column(int i, std::chrono::time_point<Clock,Duration>& rhs) const {
-			auto value = ::sqlite3_column_int64(this->_ptr, i);
-			rhs = Clock::from_time_t(static_cast<std::time_t>(value));
+			std::time_t value{};
+			this->column(i, value);
+			rhs = Clock::from_time_t(value);
 		}
 
 		template <class Alloc>
 		inline void
-		column(int index, basic_u8string<Alloc>& value) const {
+		column(int i, basic_u8string<Alloc>& value) const {
 			using char_type = typename basic_u8string<Alloc>::value_type;
-			auto* ptr = ::sqlite3_column_text(this->_ptr, index);
+			auto* ptr = ::sqlite3_column_text(this->_ptr, i);
 			if (!ptr) { value.clear(); }
 			else { value = reinterpret_cast<const char_type*>(ptr); }
 		}
 
 		template <class Alloc>
 		inline void
-		column(int index, basic_u16string<Alloc>& value) const {
+		column(int i, basic_u16string<Alloc>& value) const {
 			using char_type = typename basic_u16string<Alloc>::value_type;
-			auto* ptr = ::sqlite3_column_text16(this->_ptr, index);
+			auto* ptr = ::sqlite3_column_text16(this->_ptr, i);
 			if (!ptr) { value.clear(); }
 			else { value = reinterpret_cast<const char_type*>(ptr); }
 		}
@@ -260,42 +257,40 @@ namespace sqlite {
 			value.clear(::sqlite3_column_value(this->_ptr, i));
 		}
 
-		inline void
-		bind(int index, double value) {
-			call(::sqlite3_bind_double(this->_ptr, index, value));
+		template <class Float>
+		inline auto
+		bind(int i, Float value) ->
+		typename std::enable_if<std::is_floating_point<Float>::value>::type {
+			call(::sqlite3_bind_double(this->_ptr, i, static_cast<double>(value)));
+		}
+
+		template <class Integer>
+		inline auto
+		bind(int i, Integer value) ->
+		typename std::enable_if<std::is_integral<Integer>::value &&
+		(sizeof(Integer) <= sizeof(int))>::type {
+			call(::sqlite3_bind_int(this->_ptr, i, static_cast<int>(value)));
+		}
+
+		template <class Integer>
+		inline auto
+		bind(int i, Integer value) ->
+		typename std::enable_if<std::is_integral<Integer>::value &&
+		(sizeof(Integer) > sizeof(int))>::type {
+			call(::sqlite3_bind_int64(this->_ptr, i, static_cast<int64>(value)));
 		}
 
 		inline void
-		bind(int index, int value) {
-			call(::sqlite3_bind_int(this->_ptr, index, value));
-		}
-
-		inline void
-		bind(int index, unsigned int value) {
-			this->bind(index, static_cast<int>(value));
-		}
-
-		inline void
-		bind(int index, int64_t value) {
-			call(::sqlite3_bind_int64(this->_ptr, index, value));
-		}
-
-		inline void
-		bind(int index, uint64_t value) {
-			this->bind(index, static_cast<int64_t>(value));
-		}
-
-		inline void
-		bind(int index, const char* value) {
-			call(::sqlite3_bind_text(this->_ptr, index, value, -1, SQLITE_STATIC));
+		bind(int i, const char* value) {
+			call(::sqlite3_bind_text(this->_ptr, i, value, -1, SQLITE_STATIC));
 		}
 
 		template <class Alloc>
 		inline void
-		bind(int index, const basic_u8string<Alloc>& value) {
+		bind(int i, const basic_u8string<Alloc>& value) {
 			call(::sqlite3_bind_text64(
 				this->_ptr,
-				index,
+				i,
 				value.data(),
 				value.size(),
 				SQLITE_TRANSIENT,
@@ -305,10 +300,10 @@ namespace sqlite {
 
 		template <class Alloc>
 		inline void
-		bind(int index, const basic_u16string<Alloc>& value, encoding enc=encoding::utf16) {
+		bind(int i, const basic_u16string<Alloc>& value, encoding enc=encoding::utf16) {
 			call(::sqlite3_bind_text64(
 				this->_ptr,
-				index,
+				i,
 				reinterpret_cast<const char*>(value.data()),
 				value.size()*sizeof(char16_t),
 				SQLITE_TRANSIENT,
@@ -317,15 +312,15 @@ namespace sqlite {
 		}
 
 		inline void
-		bind(int index, any_base value) {
-			call(::sqlite3_bind_value(this->_ptr, index, value.get()));
+		bind(int i, any_base value) {
+			call(::sqlite3_bind_value(this->_ptr, i, value.get()));
 		}
 
 		inline void
-		bind(int index, const named_ptr& value) {
+		bind(int i, const named_ptr& value) {
 			call(::sqlite3_bind_pointer(
 				this->_ptr,
-				index,
+				i,
 				value.get(),
 				value.name(),
 				nullptr
@@ -333,10 +328,10 @@ namespace sqlite {
 		}
 
 		inline void
-		bind(int index, const blob& value) {
+		bind(int i, const blob& value) {
 			call(::sqlite3_bind_blob64(
 				this->_ptr,
-				index,
+				i,
 				value.get(),
 				value.size(),
 				SQLITE_TRANSIENT
@@ -344,33 +339,23 @@ namespace sqlite {
 		}
 
 		inline void
-		bind(int index, const zeroes& value) {
-			call(::sqlite3_bind_zeroblob64(this->_ptr, index, value.size()));
+		bind(int i, const zeroes& value) {
+			call(::sqlite3_bind_zeroblob64(this->_ptr, i, value.size()));
 		}
 
 		template <class Clock, class Duration>
 		inline void
-		bind(int index, const std::chrono::time_point<Clock,Duration>& value) {
-			call(::sqlite3_bind_int64(
-				this->_ptr,
-				index,
-				static_cast<int64_t>(Clock::to_time_t(value))
-			));
+		bind(int i, const std::chrono::time_point<Clock,Duration>& value) {
+			this->bind(i, Clock::to_time_t(value));
 		}
 
 		inline void
-		bind(int index, std::nullptr_t) {
-			call(::sqlite3_bind_null(this->_ptr, index));
+		bind(int i, std::nullptr_t) {
+			call(::sqlite3_bind_null(this->_ptr, i));
 		}
 
-		inline void
-		clear() {
-			call(::sqlite3_clear_bindings(this->_ptr));
-		}
-
-		void
-		dump(std::ostream& out);
-
+		inline void clear() { call(::sqlite3_clear_bindings(this->_ptr)); }
+		void dump(std::ostream& out);
 		inline const char* sql() const { return ::sqlite3_sql(this->_ptr); }
 
 		inline unique_ptr<char>
@@ -378,7 +363,7 @@ namespace sqlite {
 			return unique_ptr<char>(::sqlite3_expanded_sql(this->_ptr));
 		}
 
-		static_database database();
+		connection_base connection();
 
 		inline const char*
 		column_name(int i) const {
@@ -565,9 +550,9 @@ namespace sqlite {
 
 	template <class Head, class ... Tail>
 	inline void
-	bind(statement& rstr, int index, const Head& head, const Tail& ... tail) {
-		rstr.bind(index, head);
-		bind(rstr, index+1, tail...);
+	bind(statement& rstr, int i, const Head& head, const Tail& ... tail) {
+		rstr.bind(i, head);
+		bind(rstr, i+1, tail...);
 	}
 
 	inline void

@@ -1,7 +1,7 @@
 #ifndef SQLITEX_BACKUP_HH
 #define SQLITEX_BACKUP_HH
 
-#include <sqlitex/database.hh>
+#include <sqlitex/connection.hh>
 #include <sqlitex/forward.hh>
 
 namespace sqlite {
@@ -16,8 +16,8 @@ namespace sqlite {
 
 		inline
 		backup(
-			database& source,
-			database& destination,
+			connection& source,
+			connection& destination,
 			const char* source_name = "main",
 			const char* destination_name = "main"
 		) {

@@ -14,7 +14,7 @@ namespace sqlite {
 	namespace types {
 
 		using mutex = ::sqlite3_mutex;
-		using database = ::sqlite3;
+		using connection = ::sqlite3;
 		using int64 = ::sqlite3_int64;
 		using uint64 = ::sqlite3_uint64;
 		using file = ::sqlite3_file;
@@ -36,7 +36,7 @@ namespace sqlite {
 		using rollback_hook = void(*)(void*);
 		using update_hook = void(*)(void*,int,char const *,char const *,int64);
 		using log_callback = void(*)(void*,int,const char*);
-		using sql_log_callback = void(*)(void*,database*,const char*, int);
+		using sql_log_callback = void(*)(void*,connection*,const char*, int);
 		using page_cache = ::sqlite3_pcache;
 		using page = ::sqlite3_pcache_page;
 		using destructor = void (*)(void*);
@@ -67,7 +67,7 @@ namespace sqlite {
 	class statement_counters;
 	class context;
 	class rstream_base;
-	class database;
+	class connection;
 	class backup;
 	class snapshot;
 	class virtual_table;
@@ -80,7 +80,7 @@ namespace sqlite {
 	class column_metadata;
 	template <class T> class allocator;
 	template <class T> class row_iterator;
-	class static_database;
+	class connection_base;
 	class uri;
 
 	using string = std::basic_string<char,std::char_traits<char>,allocator<char>>;

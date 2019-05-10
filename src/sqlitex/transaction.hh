@@ -1,18 +1,18 @@
 #ifndef SQLITEX_TRANSACTION_HH
 #define SQLITEX_TRANSACTION_HH
 
-#include <sqlitex/database.hh>
+#include <sqlitex/connection.hh>
 
 namespace sqlite {
 
 	#define SQLITEX_TRANSACTION(NAME, type) \
 		class NAME { \
 		private: \
-			database& _db; \
+			connection& _db; \
 			bool _success = false; \
 		public: \
 			inline explicit \
-			NAME(database& db): _db(db) { \
+			NAME(connection& db): _db(db) { \
 				this->_db.execute("BEGIN " type " TRANSACTION"); \
 			} \
 			inline ~NAME() { \

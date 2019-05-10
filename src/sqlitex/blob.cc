@@ -1,15 +1,4 @@
 #include <sqlitex/blob.hh>
-#include <sqlitex/database.hh>
-
-sqlite::blob_streambuf::blob_streambuf(
-	database* db,
-	u8string dbname,
-	u8string table,
-	u8string column,
-	int64 rowid,
-	openmode mode
-): _buffer(db->open_blob(dbname, table, column, rowid, mode&std::ios_base::out)),
-_size(_buffer.size()) {}
 
 auto
 sqlite::blob_streambuf::overflow(int_type c) -> int_type {

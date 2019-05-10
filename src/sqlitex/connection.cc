@@ -1,4 +1,4 @@
-#include <sqlitex/database.hh>
+#include <sqlitex/connection.hh>
 
 const char*
 sqlite::to_string(locking_mode rhs) {

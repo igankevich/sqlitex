@@ -1,6 +1,6 @@
 #include <ostream>
 
-#include <sqlitex/database.hh>
+#include <sqlitex/connection.hh>
 #include <sqlitex/statement.hh>
 
 void
@@ -18,6 +18,6 @@ sqlite::statement::dump(std::ostream& out) {
 	}
 }
 
-sqlite::static_database sqlite::statement::database() {
-	return static_database(::sqlite3_db_handle(this->_ptr));
+sqlite::connection_base sqlite::statement::connection() {
+	return connection_base(::sqlite3_db_handle(this->_ptr));
 }

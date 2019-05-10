@@ -14,7 +14,7 @@ namespace sqlitex {
 	public:
 
 		inline explicit
-		session(types::database* db, const char* name="main") {
+		session(types::connection* db, const char* name="main") {
 			call(::sqlite3session_create(db, name, &this->_ptr));
 		}
 

@@ -13,7 +13,7 @@ namespace sqlite {
 	public:
 		inline context(types::context* ptr): _ptr(ptr) {}
 		inline types::context* get() { return this->_ptr; }
-		inline static_database database();
+		inline connection_base connection();
 		inline void* data() { return ::sqlite3_user_data(this->_ptr); }
 
 		template <class T> inline T*

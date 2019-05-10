@@ -1,5 +1,5 @@
-#ifndef SQLITE_DATABASE_HH
-#define SQLITE_DATABASE_HH
+#ifndef SQLITEX_CONNECTION_HH
+#define SQLITEX_CONNECTION_HH
 
 #include <chrono>
 #include <functional>
@@ -17,7 +17,7 @@
 
 namespace sqlite {
 
-	class static_database {
+	class connection_base {
 
 	public:
 		enum class status: int {
@@ -37,33 +37,33 @@ namespace sqlite {
 		struct statistic { int current; int highwater; };
 
 	protected:
-		types::database* _ptr = nullptr;
+		types::connection* _ptr = nullptr;
 
 	public:
 
-		inline explicit static_database(types::database* db): _ptr(db) {}
-		inline explicit static_database(types::context* ctx):
-		static_database(::sqlite3_context_db_handle(ctx)) {}
+		inline explicit connection_base(types::connection* db): _ptr(db) {}
+		inline explicit connection_base(types::context* ctx):
+		connection_base(::sqlite3_context_db_handle(ctx)) {}
 
-		static_database() = default;
-		static_database(const static_database&) = default;
-		static_database& operator=(const static_database&) = default;
+		connection_base() = default;
+		connection_base(const connection_base&) = default;
+		connection_base& operator=(const connection_base&) = default;
 
-		inline static_database(static_database&& rhs): _ptr(rhs._ptr) { rhs._ptr = nullptr; }
+		inline connection_base(connection_base&& rhs): _ptr(rhs._ptr) { rhs._ptr = nullptr; }
 
-		inline static_database&
-		operator=(static_database&& rhs) {
+		inline connection_base&
+		operator=(connection_base&& rhs) {
 			this->swap(rhs);
 			return *this;
 		}
 
 		inline void
-		swap(static_database& rhs) {
+		swap(connection_base& rhs) {
 			std::swap(this->_ptr, rhs._ptr);
 		}
 
-		inline const types::database* get() const { return this->_ptr; }
-		inline types::database* get() { return this->_ptr; }
+		inline const types::connection* get() const { return this->_ptr; }
+		inline types::connection* get() { return this->_ptr; }
 
 		inline void flush() { call(::sqlite3_db_cacheflush(this->_ptr)); }
 
@@ -180,13 +180,13 @@ namespace sqlite {
 			return ::sqlite3_total_changes(this->_ptr);
 		}
 
-		inline int64_t
+		inline int64
 		last_insert_row_id() const noexcept {
 			return ::sqlite3_last_insert_rowid(this->_ptr);
 		}
 
 		inline void
-		last_insert_row_id(int64_t rhs) noexcept {
+		last_insert_row_id(int64 rhs) noexcept {
 			::sqlite3_set_last_insert_rowid(this->_ptr, rhs);
 		}
 
@@ -238,7 +238,7 @@ namespace sqlite {
 		}
 
 		SQLITEX_PRAGMA(application_id, std::int32_t, std::int32_t, "%d");
-		SQLITEX_PRAGMA(user_version, std::int64_t, std::int64_t, "%d");
+		SQLITEX_PRAGMA(user_version, int64, int64, "%d");
 		SQLITEX_PRAGMA(auto_vacuum, ::sqlite::auto_vacuum, int, "%d");
 		SQLITEX_PRAGMA(automatic_index, bool, int, "%d");
 		SQLITEX_PRAGMA(cache_size, int, int, "%d");
@@ -296,7 +296,7 @@ namespace sqlite {
 
 		inline int64
 		data_version() {
-			std::int64_t value = 0;
+			int64 value = 0;
 			statement s(prepare("PRAGMA data_version"));
 			s.step();
 			s.column(0, value);
@@ -724,7 +724,7 @@ namespace sqlite {
 			types::module m{};
 			m.iVersion = 2;
 			m.xCreate = [] (
-				types::database* db,
+				types::connection* db,
 				void*,
 				int argc,
 				const char *const* argv,
@@ -732,9 +732,9 @@ namespace sqlite {
 				char**
 			) -> int {
 				try {
-					Table::create(static_database(db), argc, argv);
+					Table::create(connection_base(db), argc, argv);
 					*ptr = reinterpret_cast<types::virtual_table*>(
-						new Table(static_database(db), argc, argv)
+						new Table(connection_base(db), argc, argv)
 					);
 				} catch (const std::bad_alloc& err) {
 					return SQLITE_NOMEM;
@@ -742,7 +742,7 @@ namespace sqlite {
 				return SQLITE_OK;
 			};
 			m.xConnect = [] (
-				types::database* db,
+				types::connection* db,
 				void*,
 				int argc,
 				const char *const* argv,
@@ -751,7 +751,7 @@ namespace sqlite {
 			) -> int {
 				try {
 					*ptr = reinterpret_cast<types::virtual_table*>(
-						new Table(static_database(db), argc, argv)
+						new Table(connection_base(db), argc, argv)
 					);
 				} catch (const std::bad_alloc& err) {
 					return SQLITE_NOMEM;
@@ -904,9 +904,9 @@ namespace sqlite {
 
 	};
 
-	inline void swap(static_database& lhs, static_database& rhs) { lhs.swap(rhs); }
+	inline void swap(connection_base& lhs, connection_base& rhs) { lhs.swap(rhs); }
 
-	class database: public static_database {
+	class connection: public connection_base {
 
 	public:
 		using authorizer_type =
@@ -914,8 +914,8 @@ namespace sqlite {
 		using tracer_type = std::function<int(trace,void*,void*)>;
 		using progress_type = std::function<int()>;
 		using collation_generator_type =
-			std::function<void(static_database,::sqlite::encoding,u8string)>;
-		using commit_hook_type = std::function<int(static_database,const char*,int)>;
+			std::function<void(connection_base,::sqlite::encoding,u8string)>;
+		using commit_hook_type = std::function<int(connection_base,const char*,int)>;
 
 	private:
 		authorizer_type _authorizer;
@@ -925,15 +925,15 @@ namespace sqlite {
 		commit_hook_type _commit_hook;
 
 	public:
-		inline ~database() { this->close(); }
-		database() = default;
-		database(const database&) = delete;
-		database& operator=(const database&) = delete;
-		database(database&&) = default;
-		database& operator=(database&& rhs) = default;
+		inline ~connection() { this->close(); }
+		connection() = default;
+		connection(const connection&) = delete;
+		connection& operator=(const connection&) = delete;
+		connection(connection&&) = default;
+		connection& operator=(connection&& rhs) = default;
 
 		inline explicit
-		database(
+		connection(
 			const char* filename,
 			file_flag flags = file_flag::read_write | file_flag::create
 		) {
@@ -1007,7 +1007,7 @@ namespace sqlite {
 				[] (void* ptr, int a,
 					const char* a1, const char* a2, const char* a3, const char* a4
 				) -> int {
-					auto* db = static_cast<database*>(ptr);
+					auto* db = static_cast<connection*>(ptr);
 					return static_cast<int>(db->_authorizer(action(a),a1,a2,a3,a4));
 				},
 				this
@@ -1021,7 +1021,7 @@ namespace sqlite {
 				this->_ptr,
 				static_cast<unsigned>(mask),
 				[] (unsigned mask, void* ptr, void* a1, void* a2) -> int {
-					auto* db = static_cast<database*>(ptr);
+					auto* db = static_cast<connection*>(ptr);
 					return static_cast<int>(db->_tracer(trace(mask),a1,a2));
 				},
 				this
@@ -1035,7 +1035,7 @@ namespace sqlite {
 				this->_ptr,
 				ninstructions,
 				[] (void* ptr) -> int {
-					auto* db = static_cast<database*>(ptr);
+					auto* db = static_cast<connection*>(ptr);
 					return db->_progress();
 				},
 				this
@@ -1047,9 +1047,9 @@ namespace sqlite {
 			this->_collation_generator = cb;
 			call(::sqlite3_collation_needed(
 				this->_ptr, this,
-				[] (void* ptr, types::database* db, int enc, const char* name) {
-					static_cast<database*>(ptr)->_collation_generator(
-						static_database(db),
+				[] (void* ptr, types::connection* db, int enc, const char* name) {
+					static_cast<connection*>(ptr)->_collation_generator(
+						connection_base(db),
 						::sqlite::encoding(enc),
 						name
 					);
@@ -1067,8 +1067,8 @@ namespace sqlite {
 			this->_commit_hook = cb;
 			::sqlite3_wal_hook(
 				this->_ptr,
-				[] (void* ptr, types::database*, const char* name, int npages) {
-					auto* db = static_cast<database*>(ptr);
+				[] (void* ptr, types::connection*, const char* name, int npages) {
+					auto* db = static_cast<connection*>(ptr);
 					return db->_commit_hook(*db, name, npages);
 				},
 				this
@@ -1083,7 +1083,7 @@ namespace sqlite {
 				get(),
 				[] (
 					void* ptr,
-					types::database* db,
+					types::connection* db,
 					int op,
 					char const* dbname,
 					char const* table,
@@ -1108,10 +1108,10 @@ namespace sqlite {
 	};
 
 	#if defined(SQLITE_ENABLE_PREUPDATE_HOOK)
-	class preupdate_database: public static_database {
+	class preupdate_database: public connection_base {
 
 	public:
-		using static_database::static_database;
+		using connection_base::connection_base;
 
 		inline int num_columns() { return ::sqlite3_preupdate_count(get()); }
 		inline int depth() { return ::sqlite3_preupdate_depth(get()); }
@@ -1129,9 +1129,9 @@ namespace sqlite {
 	};
 	#endif
 
-	inline static_database
-	context::database() {
-		return static_database(::sqlite3_context_db_handle(this->_ptr));
+	inline connection_base
+	context::connection() {
+		return connection_base(::sqlite3_context_db_handle(this->_ptr));
 	}
 
 	inline void init() { call(::sqlite3_initialize()); }
