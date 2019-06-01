@@ -4,15 +4,14 @@
 #include <chrono>
 #include <functional>
 
-#include <sqlitex/errc.hh>
 #include <sqlitex/collation.hh>
 #include <sqlitex/column_metadata.hh>
+#include <sqlitex/errc.hh>
 #include <sqlitex/forward.hh>
 #include <sqlitex/function.hh>
 #include <sqlitex/mutex.hh>
-#include <sqlitex/open.hh>
-#include <sqlitex/statement.hh>
 #include <sqlitex/snapshot.hh>
+#include <sqlitex/statement.hh>
 #include <sqlitex/virtual_table.hh>
 
 namespace sqlite {
