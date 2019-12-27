@@ -1,27 +1,28 @@
-sqlite_src = files([
+sqlitex_src = files([
 	'blob.cc',
 	'connection.cc',
 	'errc.cc',
 	'statement.cc',
 ])
-sqlite_deps = [sqlite3]
-sqlite_name = 'sqlitex'
+sqlitex_deps = [sqlite3]
+sqlitex_name = 'sqlitex'
 
-sqlite_lib = library(
-	sqlite_name,
-	sources: sqlite_src,
+sqlitex_lib = library(
+	sqlitex_name,
+	sources: sqlitex_src,
 	include_directories: src,
 	implicit_include_directories: false,
-	dependencies: sqlite_deps,
+	dependencies: sqlitex_deps,
 	version: meson.project_version(),
 	install: true,
 )
 
 pkgconfig.generate(
-	libraries: [sqlite_lib],
+    sqlitex_lib,
+    requires: [sqlite3],
 	version: meson.project_version(),
-	name: sqlite_name,
-	filebase: sqlite_name,
+	name: sqlitex_name,
+	filebase: sqlitex_name,
 	description: project_description,
 )
 
@@ -52,5 +53,5 @@ install_headers(
 		'vfs.hh',
 		'virtual_table.hh',
 	],
-	subdir: sqlite_name
+	subdir: sqlitex_name
 )
