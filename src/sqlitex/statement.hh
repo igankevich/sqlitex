@@ -445,7 +445,7 @@ namespace sqlite {
 		using const_reference = const value_type&;
 		using pointer = value_type*;
 		using const_pointer = value_type&;
-		using difference_type = void;
+		using difference_type = std::ptrdiff_t;
 		using size_type = std::size_t;
 		using iterator_category = std::input_iterator_tag;
 
