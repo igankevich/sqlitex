@@ -648,4 +648,18 @@ namespace sqlite {
 
 }
 
+namespace std {
+    template <class T>
+    struct iterator_traits<sqlite::row_iterator<T>> {
+		using value_type = T;
+		using reference = value_type&;
+		using const_reference = const value_type&;
+		using pointer = value_type*;
+		using const_pointer = value_type&;
+		using difference_type = ptrdiff_t;
+		using size_type = size_t;
+		using iterator_category = std::input_iterator_tag;
+    };
+}
+
 #endif // vim:filetype=cpp
