@@ -124,7 +124,7 @@ namespace sqlite {
 	public:
 
 		inline explicit
-		statement(types::statement* stmt):
+		statement(types::statement* stmt) noexcept:
 		_ptr(stmt)
 		{}
 
@@ -132,21 +132,21 @@ namespace sqlite {
 		statement(const statement&) = delete;
 		statement& operator=(const statement&) = delete;
 
-		inline statement(statement&& rhs): _ptr(rhs._ptr) { rhs._ptr = nullptr; }
+		inline statement(statement&& rhs) noexcept: _ptr(rhs._ptr) { rhs._ptr = nullptr; }
 
 		inline statement&
-		operator=(statement&& rhs) {
+		operator=(statement&& rhs) noexcept {
 			this->swap(rhs);
 			return *this;
 		}
 
 		inline void
-		swap(statement& rhs) {
+		swap(statement& rhs) noexcept {
 			std::swap(this->_ptr, rhs._ptr);
 		}
 
 		inline
-		~statement() {
+		~statement() noexcept {
 			::sqlite3_finalize(this->_ptr);
 			this->_ptr = nullptr;
 		}
@@ -157,11 +157,11 @@ namespace sqlite {
 			this->_ptr = nullptr;
 		}
 
-		inline types::statement* get() { return this->_ptr; }
-		inline const types::statement* get() const { return this->_ptr; }
-		inline bool read_only() const { return ::sqlite3_stmt_readonly(this->_ptr); }
-		inline bool busy() const { return ::sqlite3_stmt_busy(this->_ptr); }
-		inline bool is_open() const { return this->_ptr != nullptr; }
+		inline types::statement* get() noexcept { return this->_ptr; }
+		inline const types::statement* get() const noexcept { return this->_ptr; }
+		inline bool read_only() const noexcept { return ::sqlite3_stmt_readonly(this->_ptr); }
+		inline bool busy() const noexcept { return ::sqlite3_stmt_busy(this->_ptr); }
+		inline bool is_open() const noexcept { return this->_ptr != nullptr; }
 
 		inline errc
 		step() {
@@ -170,41 +170,41 @@ namespace sqlite {
 			return ret;
 		}
 
-		inline int num_columns() const { return ::sqlite3_column_count(this->_ptr); }
+		inline int num_columns() const noexcept { return ::sqlite3_column_count(this->_ptr); }
 		inline void reset() { call(::sqlite3_reset(this->_ptr)); }
 
 		inline statement_counters counters() { return statement_counters(this->_ptr); }
 
 		inline int
-		get(status key, bool reset=false) {
+		get(status key, bool reset=false) noexcept {
 			return ::sqlite3_stmt_status(this->_ptr, int(key), reset);
 		}
 
 		inline int
-		num_parameters() const {
+		num_parameters() const noexcept {
 			return ::sqlite3_bind_parameter_count(this->_ptr);
 		}
 
 		inline const char*
-		parameter_name(int i) {
+		parameter_name(int i) noexcept {
 			return ::sqlite3_bind_parameter_name(this->_ptr, i);
 		}
 
 		inline int
-		parameter_index(const char* name) {
+		parameter_index(const char* name) noexcept {
 			return ::sqlite3_bind_parameter_index(this->_ptr, name);
 		}
 
 		template <class Float>
 		inline auto
-		column(int i, Float& value) const ->
+		column(int i, Float& value) const noexcept ->
 		typename std::enable_if<std::is_floating_point<Float>::value>::type {
 			value = static_cast<Float>(::sqlite3_column_double(this->_ptr, i));
 		}
 
 		template <class Integer>
 		inline auto
-		column(int i, Integer& value) const ->
+		column(int i, Integer& value) const noexcept ->
 		typename std::enable_if<std::is_integral<Integer>::value &&
 		(sizeof(Integer) <= sizeof(int))>::type {
 			value = static_cast<Integer>(::sqlite3_column_int(this->_ptr, i));
@@ -212,7 +212,7 @@ namespace sqlite {
 
 		template <class Integer>
 		inline auto
-		column(int i, Integer& value) const ->
+		column(int i, Integer& value) const noexcept ->
 		typename std::enable_if<std::is_integral<Integer>::value &&
 		(sizeof(Integer) > sizeof(int))>::type {
 			value = static_cast<Integer>(::sqlite3_column_int64(this->_ptr, i));
@@ -220,7 +220,7 @@ namespace sqlite {
 
 		template <class Clock, class Duration>
 		inline void
-		column(int i, std::chrono::time_point<Clock,Duration>& rhs) const {
+		column(int i, std::chrono::time_point<Clock,Duration>& rhs) const noexcept {
 			std::time_t value{};
 			this->column(i, value);
 			rhs = Clock::from_time_t(value);
@@ -253,7 +253,7 @@ namespace sqlite {
 		}
 
 		inline void
-		column(int i, any_base& value) const {
+		column(int i, any_base& value) const noexcept {
 			value.clear(::sqlite3_column_value(this->_ptr, i));
 		}
 
@@ -356,7 +356,7 @@ namespace sqlite {
 
 		inline void clear() { call(::sqlite3_clear_bindings(this->_ptr)); }
 		void dump(std::ostream& out);
-		inline const char* sql() const { return ::sqlite3_sql(this->_ptr); }
+		inline const char* sql() const noexcept { return ::sqlite3_sql(this->_ptr); }
 
 		inline unique_ptr<char>
 		expanded_sql() const {
@@ -366,75 +366,75 @@ namespace sqlite {
 		connection_base connection();
 
 		inline const char*
-		column_name(int i) const {
+		column_name(int i) const noexcept {
 			return ::sqlite3_column_name(this->_ptr, i);
 		}
 
 		template <encoding enc>
 		inline typename encoding_traits<enc>::string
-		column_name(int i) const;
+		column_name(int i) const noexcept;
 
 		inline data_type
-		column_type(int i) const {
+		column_type(int i) const noexcept {
 			return static_cast<data_type>(
 				::sqlite3_column_type(this->_ptr, i)
 			);
 		}
 
 		inline const char*
-		database_name(int i) const {
+		database_name(int i) const noexcept {
 			return ::sqlite3_column_database_name(this->_ptr, i);
 		}
 
 		template <encoding enc>
 		inline typename encoding_traits<enc>::string
-		database_name(int i) const;
+		database_name(int i) const noexcept;
 
 		inline const char*
-		table_name(int i) const {
+		table_name(int i) const noexcept {
 			return ::sqlite3_column_table_name(this->_ptr, i);
 		}
 
 		template <encoding enc>
 		inline typename encoding_traits<enc>::string
-		table_name(int i) const;
+		table_name(int i) const noexcept;
 
 		inline const char*
-		origin_name(int i) const {
+		origin_name(int i) const noexcept {
 			return ::sqlite3_column_origin_name(this->_ptr, i);
 		}
 
 		template <encoding enc>
 		inline typename encoding_traits<enc>::string
-		origin_name(int i) const;
+		origin_name(int i) const noexcept;
 
 		inline const char*
-		column_type_name(int i) const {
+		column_type_name(int i) const noexcept {
 			return ::sqlite3_column_decltype(this->_ptr, i);
 		}
 
 		template <encoding enc>
 		inline typename encoding_traits<enc>::string
-		column_type_name(int i) const;
+		column_type_name(int i) const noexcept;
 
 		inline int
-		column_size(int i) const {
+		column_size(int i) const noexcept {
 			return ::sqlite3_column_bytes(this->_ptr, i);
 		}
 
 		template <encoding enc>
 		inline int
-		column_size(int i) const;
+		column_size(int i) const noexcept;
 
 		template <class T> inline row_iterator<T> begin() { return row_iterator<T>(this); }
-		template <class T> inline row_iterator<T> end() { return row_iterator<T>(); }
+		template <class T> inline row_iterator<T> end() noexcept { return row_iterator<T>(); }
 
 		template <class T>
 		inline iterator_view<row_iterator<T>> rows() { return {begin<T>(),end<T>()}; }
 
 	};
 
-	inline void swap(statement& lhs, statement& rhs) { lhs.swap(rhs); }
+	inline void swap(statement& lhs, statement& rhs) noexcept { lhs.swap(rhs); }
 
 	template <class T>
 	class row_iterator {
@@ -472,19 +472,19 @@ namespace sqlite {
 		row_iterator& operator=(row_iterator&&) = default;
 
 		inline bool
-		operator==(const row_iterator& rhs) const {
+		operator==(const row_iterator& rhs) const noexcept {
 			return this->_ptr == rhs._ptr;
 		}
 
 		inline bool
-		operator!=(const row_iterator& rhs) const {
+		operator!=(const row_iterator& rhs) const noexcept {
 			return !operator==(rhs);
 		}
 
-		inline reference operator*() { return this->_value; }
-		inline pointer operator->() { return &this->_value; }
-		inline const_reference operator*() const { return this->_value; }
-		inline const_pointer operator->() const { return &this->_value; }
+		inline reference operator*() noexcept { return this->_value; }
+		inline pointer operator->() noexcept { return &this->_value; }
+		inline const_reference operator*() const noexcept { return this->_value; }
+		inline const_pointer operator->() const noexcept { return &this->_value; }
 
 		inline row_iterator& operator++() { this->advance(); return *this; }
 
@@ -521,7 +521,7 @@ namespace sqlite {
 
 	public:
 
-		inline explicit cstream(const statement& rhs): _statement(rhs) {}
+		inline explicit cstream(const statement& rhs) noexcept: _statement(rhs) {}
 
 		cstream() = delete;
 		cstream(const cstream&) = delete;
@@ -529,11 +529,11 @@ namespace sqlite {
 		cstream(cstream&&) = delete;
 		cstream& operator=(cstream&&) = delete;
 
-		inline void clear() { this->_column = 0; }
-		inline const statement& parent() const { return this->_statement; }
-		inline data_type column_type() const { return parent().column_type(this->_column); }
-		inline int num_columns() const { return parent().num_columns(); }
-		inline int column() const { return this->_column; }
+		inline void clear() noexcept { this->_column = 0; }
+		inline const statement& parent() const noexcept { return this->_statement; }
+		inline data_type column_type() const noexcept { return parent().column_type(this->_column); }
+		inline int num_columns() const noexcept { return parent().num_columns(); }
+		inline int column() const noexcept { return this->_column; }
 
 		template <class T>
 		inline cstream&
@@ -566,13 +566,13 @@ namespace sqlite {
 
 	template <>
 	inline u8string
-	statement::column_name<encoding::utf8>(int i) const {
+	statement::column_name<encoding::utf8>(int i) const noexcept {
 		return ::sqlite3_column_name(this->_ptr, i);
 	}
 
 	template <>
 	inline u16string
-	statement::column_name<encoding::utf16>(int i) const {
+	statement::column_name<encoding::utf16>(int i) const noexcept {
 		return reinterpret_cast<const char16_t*>(
 			::sqlite3_column_name16(this->_ptr, i)
 		);
@@ -580,13 +580,13 @@ namespace sqlite {
 
 	template <>
 	inline u8string
-	statement::database_name<encoding::utf8>(int i) const {
+	statement::database_name<encoding::utf8>(int i) const noexcept {
 		return ::sqlite3_column_database_name(this->_ptr, i);
 	}
 
 	template <>
 	inline u16string
-	statement::database_name<encoding::utf16>(int i) const {
+	statement::database_name<encoding::utf16>(int i) const noexcept {
 		return reinterpret_cast<const char16_t*>(
 			::sqlite3_column_database_name16(this->_ptr, i)
 		);
@@ -594,13 +594,13 @@ namespace sqlite {
 
 	template <>
 	inline u8string
-	statement::table_name<encoding::utf8>(int i) const {
+	statement::table_name<encoding::utf8>(int i) const noexcept {
 		return ::sqlite3_column_table_name(this->_ptr, i);
 	}
 
 	template <>
 	inline u16string
-	statement::table_name<encoding::utf16>(int i) const {
+	statement::table_name<encoding::utf16>(int i) const noexcept {
 		return reinterpret_cast<const char16_t*>(
 			::sqlite3_column_table_name16(this->_ptr, i)
 		);
@@ -608,13 +608,13 @@ namespace sqlite {
 
 	template <>
 	inline u8string
-	statement::origin_name<encoding::utf8>(int i) const {
+	statement::origin_name<encoding::utf8>(int i) const noexcept {
 		return ::sqlite3_column_origin_name(this->_ptr, i);
 	}
 
 	template <>
 	inline u16string
-	statement::origin_name<encoding::utf16>(int i) const {
+	statement::origin_name<encoding::utf16>(int i) const noexcept {
 		return reinterpret_cast<const char16_t*>(
 			::sqlite3_column_origin_name16(this->_ptr, i)
 		);
@@ -622,13 +622,13 @@ namespace sqlite {
 
 	template <>
 	inline u8string
-	statement::column_type_name<encoding::utf8>(int i) const {
+	statement::column_type_name<encoding::utf8>(int i) const noexcept {
 		return ::sqlite3_column_decltype(this->_ptr, i);
 	}
 
 	template <>
 	inline u16string
-	statement::column_type_name<encoding::utf16>(int i) const {
+	statement::column_type_name<encoding::utf16>(int i) const noexcept {
 		return reinterpret_cast<const char16_t*>(
 			::sqlite3_column_decltype16(this->_ptr, i)
 		);
@@ -636,13 +636,13 @@ namespace sqlite {
 
 	template <>
 	inline int
-	statement::column_size<encoding::utf8>(int i) const {
+	statement::column_size<encoding::utf8>(int i) const noexcept {
 		return ::sqlite3_column_bytes(this->_ptr, i);
 	}
 
 	template <>
 	inline int
-	statement::column_size<encoding::utf16>(int i) const {
+	statement::column_size<encoding::utf16>(int i) const noexcept {
 		return ::sqlite3_column_bytes16(this->_ptr, i);
 	}
 

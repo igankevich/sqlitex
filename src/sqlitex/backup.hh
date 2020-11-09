@@ -59,23 +59,13 @@ namespace sqlite {
 			throw_error(ret);
 		}
 
-		inline bool
-		done() const {
-			return this->_done;
-		}
+		inline bool done() const noexcept { return this->_done; }
+		inline int remaining() const noexcept { return ::sqlite3_backup_remaining(this->_backup); }
 
-		inline int
-		remaining() const {
-			return ::sqlite3_backup_remaining(this->_backup);
-		}
+		inline int total() const noexcept { return ::sqlite3_backup_pagecount(this->_backup); }
 
-		inline int
-		total() const {
-			return ::sqlite3_backup_pagecount(this->_backup);
-		}
-
-		inline types::backup* get() { return this->_backup; }
-		inline const types::backup* get() const { return this->_backup; }
+		inline types::backup* get() noexcept { return this->_backup; }
+		inline const types::backup* get() const noexcept { return this->_backup; }
 
 	};
 

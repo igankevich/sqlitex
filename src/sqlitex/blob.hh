@@ -26,8 +26,8 @@ namespace sqlite {
 		blob(std::string&& rhs):
 		std::string(std::forward<std::string>(rhs)) {}
 
-		inline void* get() { return &this->std::string::operator[](0); }
-		inline const void* get() const { return this->std::string::data(); }
+		inline void* get() noexcept { return &this->std::string::operator[](0); }
+		inline const void* get() const noexcept { return this->std::string::data(); }
 
 	};
 
@@ -37,8 +37,8 @@ namespace sqlite {
 		uint64 _size = 0;
 
 	public:
-		inline explicit zeroes(uint64 size): _size(size) {}
-		inline uint64 size() const { return this->_size; }
+		inline explicit zeroes(uint64 size) noexcept: _size(size) {}
+		inline uint64 size() const noexcept { return this->_size; }
 
 	};
 
@@ -50,14 +50,14 @@ namespace sqlite {
 	public:
 
 		blob_buffer() = default;
-		inline explicit blob_buffer(types::blob* ptr): _ptr(ptr) {}
-		inline ~blob_buffer() { ::sqlite3_blob_close(this->_ptr); }
+		inline explicit blob_buffer(types::blob* ptr) noexcept: _ptr(ptr) {}
+		inline ~blob_buffer() noexcept { ::sqlite3_blob_close(this->_ptr); }
 		blob_buffer(const blob_buffer&) = delete;
 		blob_buffer& operator=(const blob_buffer&) = delete;
-		inline blob_buffer(blob_buffer&& rhs): _ptr(rhs._ptr) { rhs._ptr = nullptr; }
-		inline blob_buffer& operator=(blob_buffer&& rhs) { this->swap(rhs); return *this; }
-		inline void swap(blob_buffer& rhs) { std::swap(this->_ptr, rhs._ptr); }
-		inline int size() const { return ::sqlite3_blob_bytes(this->_ptr); }
+		inline blob_buffer(blob_buffer&& rhs) noexcept: _ptr(rhs._ptr) { rhs._ptr = nullptr; }
+		inline blob_buffer& operator=(blob_buffer&& rhs) noexcept { this->swap(rhs); return *this; }
+		inline void swap(blob_buffer& rhs) noexcept { std::swap(this->_ptr, rhs._ptr); }
+		inline int size() const noexcept { return ::sqlite3_blob_bytes(this->_ptr); }
 		inline void reopen(int64 rowid) { call(::sqlite3_blob_reopen(this->_ptr, rowid)); }
 
 		inline void
@@ -74,7 +74,7 @@ namespace sqlite {
 
 	};
 
-	inline void swap(blob_buffer& lhs, blob_buffer& rhs) { lhs.swap(rhs); }
+	inline void swap(blob_buffer& lhs, blob_buffer& rhs) noexcept { lhs.swap(rhs); }
 
 	class blob_streambuf: public std::streambuf {
 

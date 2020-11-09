@@ -65,34 +65,34 @@ namespace sqlite {
 	public:
 
 		inline explicit
-		mutex(mutex_kind kind=fast): _ptr(::sqlite3_mutex_alloc(kind)) {}
-		inline ~mutex() { ::sqlite3_mutex_free(this->_ptr); }
-		inline void lock() { ::sqlite3_mutex_enter(this->_ptr); }
-		inline void unlock() { ::sqlite3_mutex_leave(this->_ptr); }
-		inline bool try_lock() { return ::sqlite3_mutex_try(this->_ptr) == SQLITE_OK; }
+		mutex(mutex_kind kind=fast) noexcept: _ptr(::sqlite3_mutex_alloc(kind)) {}
+		inline ~mutex() noexcept { ::sqlite3_mutex_free(this->_ptr); }
+		inline void lock() noexcept { ::sqlite3_mutex_enter(this->_ptr); }
+		inline void unlock() noexcept { ::sqlite3_mutex_leave(this->_ptr); }
+		inline bool try_lock() noexcept { return ::sqlite3_mutex_try(this->_ptr) == SQLITE_OK; }
 		#ifndef NDEBUG
-		inline bool held() { return ::sqlite3_mutex_held(this->_ptr) != 0; }
-		inline bool not_held() { return ::sqlite3_mutex_held(this->_ptr) != 0; }
+		inline bool held() noexcept { return ::sqlite3_mutex_held(this->_ptr) != 0; }
+		inline bool not_held() noexcept { return ::sqlite3_mutex_held(this->_ptr) != 0; }
 		#endif
 
 		mutex(const mutex&) = delete;
 		mutex& operator=(const mutex&) = delete;
 
-		inline mutex(mutex&& rhs): _ptr(rhs._ptr) { rhs._ptr = nullptr; }
-		inline mutex& operator=(mutex&& rhs) { this->swap(rhs); return *this; }
-		inline void swap(mutex& rhs) { std::swap(this->_ptr, rhs._ptr); }
+		inline mutex(mutex&& rhs) noexcept: _ptr(rhs._ptr) { rhs._ptr = nullptr; }
+		inline mutex& operator=(mutex&& rhs) noexcept { this->swap(rhs); return *this; }
+		inline void swap(mutex& rhs) noexcept { std::swap(this->_ptr, rhs._ptr); }
 
 	protected:
-		inline explicit mutex(types::mutex* ptr): _ptr(ptr) {}
-		inline void reset() { this->_ptr = nullptr; }
+		inline explicit mutex(types::mutex* ptr) noexcept: _ptr(ptr) {}
+		inline void reset() noexcept { this->_ptr = nullptr; }
 
 	};
 
-	inline void swap(mutex& lhs, mutex& rhs) { lhs.swap(rhs); }
+	inline void swap(mutex& lhs, mutex& rhs) noexcept { lhs.swap(rhs); }
 
 	class recursive_mutex: public mutex {
 	public:
-		inline recursive_mutex(): mutex(recursive) {}
+		inline recursive_mutex() noexcept: mutex(recursive) {}
 
 		recursive_mutex(recursive_mutex&&) = default;
 		recursive_mutex& operator=(recursive_mutex&&) = default;
@@ -108,9 +108,9 @@ namespace sqlite {
 	class static_mutex: public mutex {
 
 	public:
-		inline explicit static_mutex(mutex_kind kind): mutex(kind) {}
-		inline explicit static_mutex(types::mutex* ptr): mutex(ptr) {}
-		inline ~static_mutex() { this->reset(); }
+		inline explicit static_mutex(mutex_kind kind) noexcept: mutex(kind) {}
+		inline explicit static_mutex(types::mutex* ptr) noexcept: mutex(ptr) {}
+		inline ~static_mutex()  noexcept{ this->reset(); }
 		static_mutex(static_mutex&&) = default;
 		static_mutex& operator=(static_mutex&&) = default;
 		static_mutex(const static_mutex&) = delete;

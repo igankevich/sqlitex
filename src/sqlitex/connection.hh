@@ -40,54 +40,54 @@ namespace sqlite {
 
 	public:
 
-		inline explicit connection_base(types::connection* db): _ptr(db) {}
-		inline explicit connection_base(types::context* ctx):
+		inline explicit connection_base(types::connection* db) noexcept: _ptr(db) {}
+		inline explicit connection_base(types::context* ctx) noexcept:
 		connection_base(::sqlite3_context_db_handle(ctx)) {}
 
 		connection_base() = default;
 		connection_base(const connection_base&) = default;
 		connection_base& operator=(const connection_base&) = default;
 
-		inline connection_base(connection_base&& rhs): _ptr(rhs._ptr) { rhs._ptr = nullptr; }
+		inline connection_base(connection_base&& rhs) noexcept : _ptr(rhs._ptr) { rhs._ptr = nullptr; }
 
 		inline connection_base&
-		operator=(connection_base&& rhs) {
+		operator=(connection_base&& rhs) noexcept {
 			this->swap(rhs);
 			return *this;
 		}
 
 		inline void
-		swap(connection_base& rhs) {
+		swap(connection_base& rhs) noexcept {
 			std::swap(this->_ptr, rhs._ptr);
 		}
 
-		inline const types::connection* get() const { return this->_ptr; }
-		inline types::connection* get() { return this->_ptr; }
+		inline const types::connection* get() const noexcept { return this->_ptr; }
+		inline types::connection* get() noexcept { return this->_ptr; }
 
 		inline void flush() { call(::sqlite3_db_cacheflush(this->_ptr)); }
 
 		inline const char*
-		filename(const char* name="main") const {
+		filename(const char* name="main") const noexcept {
 			return ::sqlite3_db_filename(this->_ptr, name);
 		}
 
 		inline bool
-		read_only(const char* name="main") const {
+		read_only(const char* name="main") const noexcept {
 			return ::sqlite3_db_readonly(this->_ptr, name) != 0;
 		}
 
 		inline void*
-		commit_hook(types::commit_hook rhs, void* ptr=nullptr) {
+		commit_hook(types::commit_hook rhs, void* ptr=nullptr) noexcept {
 			return ::sqlite3_commit_hook(this->_ptr, rhs, ptr);
 		}
 
 		inline void*
-		rollback_hook(types::rollback_hook rhs, void* ptr=nullptr) {
+		rollback_hook(types::rollback_hook rhs, void* ptr=nullptr) noexcept {
 			return ::sqlite3_rollback_hook(this->_ptr, rhs, ptr);
 		}
 
 		inline void*
-		update_hook(types::update_hook rhs, void* ptr=nullptr) {
+		update_hook(types::update_hook rhs, void* ptr=nullptr) noexcept {
 			return ::sqlite3_update_hook(this->_ptr, rhs, ptr);
 		}
 
@@ -365,7 +365,7 @@ namespace sqlite {
 			call(::sqlite3_busy_handler(this->_ptr, handler, data));
 		}
 
-		inline int release_memory() { return ::sqlite3_db_release_memory(this->_ptr); }
+		inline int release_memory() noexcept { return ::sqlite3_db_release_memory(this->_ptr); }
 
 		inline void
 		foreign_keys(bool enable) {
@@ -425,15 +425,15 @@ namespace sqlite {
 			call(::sqlite3_db_config(this->_ptr, SQLITE_DBCONFIG_MAINDBNAME, name));
 		}
 
-		inline void interrupt() { ::sqlite3_interrupt(this->_ptr); }
+		inline void interrupt() noexcept { ::sqlite3_interrupt(this->_ptr); }
 
 		inline bool
-		is_in_auto_commit_mode() {
+		is_in_auto_commit_mode() noexcept {
 			return ::sqlite3_get_autocommit(this->_ptr) != 0;
 		}
 
 		inline bool
-		transaction_is_active() {
+		transaction_is_active() noexcept {
 			return !this->is_in_auto_commit_mode();
 		}
 
@@ -592,7 +592,7 @@ namespace sqlite {
 		}
 
 		inline void
-		finalize() {
+		finalize() noexcept {
 			types::statement* stmt;
 			while ((stmt = ::sqlite3_next_stmt(this->_ptr, nullptr))) {
 				::sqlite3_finalize(stmt);
@@ -652,38 +652,38 @@ namespace sqlite {
 		}
 
 		inline errc
-		error_code() const {
+		error_code() const noexcept {
 			return errc(::sqlite3_errcode(this->_ptr));
 		}
 
 		inline errc
-		extended_error_code() const {
+		extended_error_code() const noexcept {
 			return errc(::sqlite3_extended_errcode(this->_ptr));
 		}
 
 		inline std::errc
-		system_error_code() const {
+		system_error_code() const noexcept {
 			return std::errc(::sqlite3_system_errno(this->_ptr));
 		}
 
-		inline const char* error_message() const { return ::sqlite3_errmsg(this->_ptr); }
+		inline const char* error_message() const noexcept { return ::sqlite3_errmsg(this->_ptr); }
 
 		inline u16string
-		error_message_utf16() const {
+		error_message_utf16() const noexcept {
 			return reinterpret_cast<const char16_t*>(::sqlite3_errmsg16(this->_ptr));
 		}
 
 		inline static_mutex
-		mutex() const {
+		mutex() const noexcept {
 			return static_mutex(::sqlite3_db_mutex(this->_ptr));
 		}
 
 		inline int
-		limit(::sqlite::limit key, int value) {
+		limit(::sqlite::limit key, int value) noexcept {
 			return ::sqlite3_limit(this->_ptr, int(key), value);
 		}
 
-		inline int limit(::sqlite::limit key) { return this->limit(key, -1); }
+		inline int limit(::sqlite::limit key) noexcept { return this->limit(key, -1); }
 
 		inline void
 		unlock_notify(types::unlock_notify cb, void* ptr=nullptr) {
@@ -875,7 +875,7 @@ namespace sqlite {
 		}
 
 		inline ::sqlite::conflict_policy
-		conflict_policy() {
+		conflict_policy() noexcept {
 			return ::sqlite::conflict_policy(::sqlite3_vtab_on_conflict(this->_ptr));
 		}
 
@@ -892,7 +892,7 @@ namespace sqlite {
 	private:
 
 		inline int
-		do_execute(const char* sql) {
+		do_execute(const char* sql) noexcept {
 			return ::sqlite3_exec(this->_ptr, sql, nullptr, nullptr, nullptr);
 		}
 
@@ -903,7 +903,7 @@ namespace sqlite {
 
 	};
 
-	inline void swap(connection_base& lhs, connection_base& rhs) { lhs.swap(rhs); }
+	inline void swap(connection_base& lhs, connection_base& rhs) noexcept { lhs.swap(rhs); }
 
 	class connection: public connection_base {
 
@@ -924,7 +924,7 @@ namespace sqlite {
 		commit_hook_type _commit_hook;
 
 	public:
-		inline ~connection() { this->close(); }
+		inline ~connection() noexcept { this->close(); }
 		connection() = default;
 		connection(const connection&) = delete;
 		connection& operator=(const connection&) = delete;
@@ -1112,8 +1112,8 @@ namespace sqlite {
 	public:
 		using connection_base::connection_base;
 
-		inline int num_columns() { return ::sqlite3_preupdate_count(get()); }
-		inline int depth() { return ::sqlite3_preupdate_depth(get()); }
+		inline int num_columns() noexcept { return ::sqlite3_preupdate_count(get()); }
+		inline int depth() noexcept { return ::sqlite3_preupdate_depth(get()); }
 
 		inline void
 		old_values(int n, any_base* values) {
@@ -1140,7 +1140,7 @@ namespace sqlite {
 	inline void shared_cache(bool b) { call(::sqlite3_enable_shared_cache(b)); }
 	inline void load(types::entry_point ptr) { call(::sqlite3_auto_extension(ptr)); }
 	inline void unload(types::entry_point ptr) { call(::sqlite3_cancel_auto_extension(ptr)); }
-	inline void unload_all() { ::sqlite3_reset_auto_extension(); }
+	inline void unload_all() noexcept { ::sqlite3_reset_auto_extension(); }
 
 }
 
