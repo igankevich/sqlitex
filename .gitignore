@@ -1,5 +1,7 @@
-# Created by https://www.gitignore.io/api/linux
-# Edit at https://www.gitignore.io/?templates=linux
+/build
+
+# Created by https://www.toptal.com/developers/gitignore/api/vim,linux
+# Edit at https://www.toptal.com/developers/gitignore?templates=vim,linux
 
 ### Linux ###
 *~
@@ -16,6 +18,24 @@
 # .nfs files are created when an open file is removed but is still being accessed
 .nfs*
 
-# End of https://www.gitignore.io/api/linux
+### Vim ###
+# Swap
+[._]*.s[a-v][a-z]
+!*.svg  # comment out if you don't need vector files
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
 
-/build
+# Session
+Session.vim
+Sessionx.vim
+
+# Temporary
+.netrwhist
+# Auto-generated tag files
+tags
+# Persistent undo
+[._]*.un~
+
+# End of https://www.toptal.com/developers/gitignore/api/vim,linux
