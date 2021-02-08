@@ -281,32 +281,47 @@ namespace sqlite {
 		}
 
 		inline void
-		bind(int i, const char* value) {
-			call(::sqlite3_bind_text(this->_ptr, i, value, -1, SQLITE_STATIC));
+		bind(int i, const char* value, destructor destr=pass_by_copy) {
+			call(::sqlite3_bind_text(this->_ptr, i, value, -1, destr));
 		}
 
 		template <class Alloc>
 		inline void
-		bind(int i, const basic_u8string<Alloc>& value) {
+		bind(int i, const basic_u8string<Alloc>& value, destructor destr=pass_by_copy) {
 			call(::sqlite3_bind_text64(
 				this->_ptr,
 				i,
 				value.data(),
 				value.size(),
-				SQLITE_TRANSIENT,
+				destr,
 				downcast(encoding::utf8)
 			));
 		}
 
 		template <class Alloc>
 		inline void
-		bind(int i, const basic_u16string<Alloc>& value, encoding enc=encoding::utf16) {
+		bind(int i, const basic_u16string<Alloc>& value,
+             encoding enc=encoding::utf16, destructor destr=pass_by_copy) {
 			call(::sqlite3_bind_text64(
 				this->_ptr,
 				i,
 				reinterpret_cast<const char*>(value.data()),
 				value.size()*sizeof(char16_t),
-				SQLITE_TRANSIENT,
+				destr,
+				downcast(enc)
+			));
+		}
+
+		template <class Alloc>
+		inline void
+		bind(int i, const basic_u16string<Alloc>& value, destructor destr=pass_by_copy,
+             encoding enc=encoding::utf16) {
+			call(::sqlite3_bind_text64(
+				this->_ptr,
+				i,
+				reinterpret_cast<const char*>(value.data()),
+				value.size()*sizeof(char16_t),
+				destr,
 				downcast(enc)
 			));
 		}
@@ -328,14 +343,8 @@ namespace sqlite {
 		}
 
 		inline void
-		bind(int i, const blob& value) {
-			call(::sqlite3_bind_blob64(
-				this->_ptr,
-				i,
-				value.get(),
-				value.size(),
-				SQLITE_TRANSIENT
-			));
+		bind(int i, const blob& value, destructor destr=pass_by_copy) {
+			call(::sqlite3_bind_blob64(this->_ptr, i, value.get(), value.size(), destr));
 		}
 
 		inline void

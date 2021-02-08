@@ -59,37 +59,51 @@ namespace sqlite {
 		}
 
 		inline void
-		result(const char* rhs) {
-			::sqlite3_result_text(this->_ptr, rhs, -1, SQLITE_STATIC);
+		result(const char* rhs, destructor destr=pass_by_copy) {
+			::sqlite3_result_text(this->_ptr, rhs, -1, destr);
 		}
 
 		template <class Alloc>
 		inline void
-		result(const basic_u8string<Alloc>& value) {
+		result(const basic_u8string<Alloc>& value, destructor destr=pass_by_copy) {
 			::sqlite3_result_text64(
 				this->_ptr,
 				value.data(),
 				value.size(),
-				SQLITE_TRANSIENT,
+				destr,
 				downcast(encoding::utf8)
 			);
 		}
 
 		template <class Alloc>
 		inline void
-		result(const basic_u16string<Alloc>& value, encoding enc=encoding::utf16) {
+		result(const basic_u16string<Alloc>& value,
+               encoding enc=encoding::utf16, destructor destr=pass_by_copy) {
 			::sqlite3_result_text64(
 				this->_ptr,
 				reinterpret_cast<const char*>(value.data()),
 				value.size()*sizeof(char16_t),
-				SQLITE_TRANSIENT,
+				destr,
+				downcast(enc)
+			);
+		}
+
+		template <class Alloc>
+		inline void
+		result(const basic_u16string<Alloc>& value, destructor destr=pass_by_copy,
+               encoding enc=encoding::utf16) {
+			::sqlite3_result_text64(
+				this->_ptr,
+				reinterpret_cast<const char*>(value.data()),
+				value.size()*sizeof(char16_t),
+				destr,
 				downcast(enc)
 			);
 		}
 
 		inline void
-		result(const blob& value) {
-			::sqlite3_result_blob64(this->_ptr, value.get(), value.size(), SQLITE_TRANSIENT);
+		result(const blob& value, destructor destr=pass_by_copy) {
+			::sqlite3_result_blob64(this->_ptr, value.get(), value.size(), destr);
 		}
 
 		inline void

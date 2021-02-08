@@ -392,6 +392,10 @@ namespace sqlite {
 		return ::sqlite3_strglob(lhs.data(), rhs.data()) == 0;
 	}
 
+    using destructor = ::sqlite3_destructor_type;
+    const auto pass_by_copy = SQLITE_TRANSIENT;
+    const auto pass_by_reference = SQLITE_STATIC;
+
 }
 
 #endif // vim:filetype=cpp
